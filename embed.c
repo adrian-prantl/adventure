@@ -40,6 +40,10 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
   }
 }
 
+foreign_t pl_bold()   { attron(A_BOLD); PL_succeed; }
+foreign_t pl_italic() { attron(A_UNDERLINE); PL_succeed; }
+foreign_t pl_roman()  { attrset(A_NORMAL); PL_succeed; }
+
 int
 main(int argc, char **argv)
 { 
@@ -75,6 +79,9 @@ main(int argc, char **argv)
   // Register foreign predicates with the interpreter
   PL_register_foreign("getch", 1, pl_getch, 0);
   PL_register_foreign("write_xy", 3, pl_write_xy, 0);
+  PL_register_foreign("bold", 0, pl_bold, 0);
+  PL_register_foreign("italic", 0, pl_italic, 0);
+  PL_register_foreign("roman", 0, pl_roman, 0);
 
   // Load our own modules
   term_t t1 = PL_new_term_ref();
