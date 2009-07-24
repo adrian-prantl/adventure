@@ -76,7 +76,7 @@ handle_tabulator(WordsR, CsR) :-
 %-----------------------------------------------
 % Handle Backspace
 backspace(127) :- cwrite('\b\b\b   \b\b\b').
-backspace(8).
+backspace(8) :- cwrite(' \b').
 
 handle_backspace([], []) :- !,
   io_loop([], []).
@@ -140,27 +140,61 @@ action(S) :-
 error(Goal, E) :-
   writeln(E),
   Goal =.. [F|_],
-  italic, 
-  cformat('Sorry, I don\'t know how to ~w properly.~n', [F]),
-  roman.
+  answer('Sorry, I don\'t know how to ~w properly.~n', [F]).
+
+change(Key, Term) :-
+  (recorded(Key, Term, Reference)
+  -> erase(Reference)
+  ; true),
+  recorda(Key, Term).
+
+answer(Message) :- italic, cformat(Message, []), roman.
+answer(Message, Xs) :- italic, cformat(Message, Xs), roman.
+
+% This is a meta-predicate to save the author repetitive typing
+% Use it to associate Things with Descriptions
+declare([]).
+declare([object(Name, Desc)|Xs]) :-
+  asserta(description(Name, Desc)),
+  asserta(object(Name)),
+  declare(Xs).
+declare([location(Room, Desc, Doors, Objects)|Xs]) :-
+  asserta(description(Room, Desc)),
+  maplist(new_door(Room), Doors),
+  maplist(new_object(Room), Objects),
+  declare(Xs).
+declare([person(Name, Desc)|Xs]) :-
+  asserta(description(Name, Desc)),
+  asserta(person(Name)),
+  declare(Xs).
+new_door(A, B) :- asserta(door(A, B)).
+new_object(Room, Object) :- asserta(inside(Room, Object)).
+
+
+printable([X|Xs], A) :- atomic_list_concat([X|Xs], ' ', A).
+printable(A, A) :- atom(A).
 
 %-----------------------------------------------
 % BASIC GAME MECHANICS
+
+:- recorda(here, kitchen).
 
 noun_type(object).
 noun_type(location).
 noun_type(person).
 
 % nouns
-object(light).
-object(bread).
-object(door).
-object(lighter).
+:- declare(
+[
+ object(light,'It is hot.'),
+ object(bread,'The bread seems extremely durable.'),
+ object(lighter,'A real Zippo.'),
 
-location([living,room]).
-location(kitchen).
+ location([living,room], 'A cosy living room.',[kitchen],[lighter]),
+ location(kitchen,'The kitchen is small.',[[living,room]],[bread,gnome]),
 
-person(gnome).
+ person(gnome, 'Even for a gnome he seems unusual hairy.')
+]).
 
 % properties
 inflammable(wood).
@@ -168,10 +202,39 @@ bibulous(wood).
 
 material(door, wood).
 
-% actions
-%go(Location) :-
-%  recorda...
+reachable(A, B) :- door(A, B) ; door(B, A).
+reachable(A, B) :- reachable(A, C), reachable(C, B).
 
+% actions
+
+go(Location) :-
+  recorded(here, Here),
+  reachable(Here, Location),
+  change(here, Location).
+
+look :- 
+  recorded(here, Location),
+  printable(Location, L),
+  description(Location, Desc),
+  answer('You are in the ~w.~n~w.~n', [L, Desc]),
+  look_objects(Location, L),
+  look_doors(Location).
+
+% List all objects via backtracking
+look_objects(Location, L) :-
+  inside(Location, Obj),
+  answer('Inside the ~w there is a ~w.~n', [L, Obj]),
+  fail.
+look_objects(_, _).
+
+look_doors(Location) :- 
+  door(Location, Room),
+  printable(Room, R),
+  answer('From here you can go to the ~w.~n', [R]),
+  fail.
+look_doors(_).
+
+quit :- bye, halt.
 %-----------------------------------------------
 % GRAMMAR
 
@@ -183,6 +246,7 @@ word(W) :- noun_type(T), phrase(noun(T,_), Ws),        member(W, Ws).
 word(W) :- noun_type(T), phrase(preposition(T,_), Ws), member(W, Ws).
 % End - reverse rules
 
+sentence([Verb]) --> verb(intrans, Verb).
 sentence([Verb, Noun]) --> verb(Type, Verb), nounphrase(Type, Noun).
 sentence([Verb, Noun]) -->
   verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
@@ -200,6 +264,7 @@ noun(Type, Noun) --> { call(Type,Noun), is_list(Noun) }, Noun.
 
 verb(Type,V) --> trans_verb(Type,V).
 verb(intrans,V) --> intrans_verb(V).
+intrans(_) :- fail.
 
 preposition(object,at) --> [at].
 preposition(object,in) --> [in].
@@ -226,3 +291,5 @@ trans_verb(location, go) --> [walk].
 intrans_verb(inventory) --> [inventory].
 intrans_verb(look) --> [look].
 intrans_verb(quit) --> [exit].
+intrans_verb(quit) --> [quit].
+intrans_verb(quit) --> [bye].

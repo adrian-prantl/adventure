@@ -47,8 +47,6 @@ foreign_t pl_roman()  { attrset(A_NORMAL); PL_succeed; }
 int
 main(int argc, char **argv)
 { 
-  // PROLOG initailization
-
 /* #ifdef READLINE /\* Remove if you don't want readline *\/ */
 /*   PL_initialise_hook(install_readline); */
 /* #endif */
@@ -69,7 +67,7 @@ main(int argc, char **argv)
   
   if ( !PL_initialise(ac, av) )
     PL_halt(1);
-
+  
   // Curses Initialization
   win = initscr();
   timeout(-1);
