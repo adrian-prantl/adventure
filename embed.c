@@ -6,6 +6,9 @@
 void abort_interpreter() {
   PL_cleanup(0);
   // Curses
+  move(24, 1);
+  clear();
+  printw("Godbye!\n");
   endwin();
 }
 
