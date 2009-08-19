@@ -29,6 +29,15 @@ prompt(WsR, CsR) :-
   lists_sentence(WsR, CsR, Sentence),
   maplist(cwrite_, Sentence).
 
+%%io_loop(+S, +WordsR, +CsR)
+% The main I/O loop.
+%
+% * S is the current state.
+%
+% * WordsR is the reversed list of words read so far.
+%
+% * CsR is the reversed list of characters in the word the user is
+%   typing at the moment.
 io_loop(S, WordsR, CsR) :-
   format_xy('Words = ~w, Cs = ~w~n', [WordsR,CsR], 0, 23),
   autocomplete(S, WordsR, CsR),
@@ -37,10 +46,14 @@ io_loop(S, WordsR, CsR) :-
   handle_char(S, Char, WordsR, CsR).
 
 % Switch over current Char
-handle_char(S, C, WsR, CsR) :- char_type(C, alnum), io_loop(S, WsR, [C|CsR]).
-handle_char(S, C, WsR, CsR) :- char_code(' ', C), handle_whitespace(S,WsR, CsR).
-handle_char(S, C, WsR, CsR) :- char_code('\t', C), handle_tabulator(S,WsR, CsR).
-handle_char(S, C, WsR, CsR) :- backspace(C),       handle_backspace(S,WsR, CsR).
+handle_char(S, C, WsR, CsR) :-
+  char_type(C, alnum), atom_codes(Ch, [C]), cwrite(Ch),
+  io_loop(S, WsR, [C|CsR]).
+handle_char(S, C, WsR, CsR) :-
+  char_code(' ', C), cwrite(' '),
+  handle_whitespace(S, WsR, CsR).
+handle_char(S, C, WsR, CsR) :- char_code('\t', C), handle_tabulator(S, WsR, CsR).
+handle_char(S, C, WsR, CsR) :- backspace(C),       handle_backspace(S, WsR, CsR).
 handle_char(_, C,_WsR,_CsR) :- char_type(C, end_of_file), bye.
 handle_char(S, C, WsR, CsR) :- char_type(C, end_of_line), 
   lists_sentence(WsR, CsR, Sentence),
@@ -65,29 +78,38 @@ lists_sentence(WordsR, CharsR, Sentence) :-
 
 %-----------------------------------------------
 handle_whitespace(S, WordsR, []) :- !,
-  cwrite('\b'), % Ignore Whitespace
+  % Ignore Whitespace
   io_loop(S, WordsR, []).
 handle_whitespace(S, WordsR, CsR) :-
   reverse(CsR, Cs), % finish this word
   atom_codes(W, Cs),
   io_loop(S, [W|WordsR], []).
+
 handle_tabulator(S, WordsR, CsR) :-
-  cwrite('\b\b\b\b'), % ignore tab
-  io_loop(S, WordsR, CsR).
+  % ignore tab char, autocomplete current word
+  (finishes_sentence(S, WordsR, CsR, Suffix, _AC_Words)
+  -> ( cwrite(Suffix),
+       atom_codes(Suffix, Codes),
+       reverse(Codes, SuffixR),
+       append(SuffixR, CsR, CompletedWord),
+       io_loop(S, WordsR, CompletedWord)
+     )
+  ; io_loop(S, WordsR, CsR)).
 
 %-----------------------------------------------
 % Handle Backspace
-backspace(127) :- cwrite('\b\b\b   \b\b\b').
-backspace(8) :- cwrite(' \b').
+backspace(127).
+backspace(8).
 
 handle_backspace(S, [], []) :- !,
   io_loop(S, [], []).
 handle_backspace(S, [W|WordsR], []) :- !,
-  cwrite('\b \b'), % get rid of that extra space
+  cwrite('\b \b\b \b'), % get rid of that extra space
   atom_codes(W, Cs),
   reverse(Cs, [_|CsR]),
   io_loop(S, WordsR, CsR).
 handle_backspace(S, WordsR, [_|CsR]) :-
+  cwrite('\b \b'),
   io_loop(S, WordsR, CsR).
 
 %-----------------------------------------------
@@ -198,13 +220,16 @@ new_game(NewGame) :-
  object(light,'It is hot.'),
  object(bread,'The bread seems extremely durable.'),
  object(lighter,'A real Zippo.'),
+ object(stove,'Grandmother\'s stove.'),
 
  location([living,room], 'A cosy living room.',[kitchen],[lighter]),
- location(kitchen,'The kitchen is small.',[[living,room]],[bread,gnome]),
+ location(kitchen,'The kitchen is small.',[[living,room]],[gnome,stove]),
 
  person(gnome, 'Even for a gnome he seems unusually hairy.')
 ],
-	  NewGame).
+	  S1),
+  put_assoc(location(bread), S1, stove, S2),
+  NewGame=S2.
 
 % properties
 inflammable(wood).
@@ -241,7 +266,8 @@ look_doors(_).
 % look at
 look_at(S, S, X) :-
   description(X, Desc),
-  answer('~w~n', [Desc]).
+  answer('~w~n', [Desc]),
+  look_objects(S, X, X). % fixme 
 
 % go
 path_to(A, B, Path) :-
@@ -327,6 +353,11 @@ noun(Type, Noun) --> { call(Type,Noun), is_list(Noun) }, Noun.
 verb(Type,V) --> trans_verb(Type,V).
 verb(intrans,V) --> intrans_verb(V).
 intrans(_) :- fail.
+
+% use key on door
+% open door
+% take anvil?
+% use saw with bread -> key
 
 preposition(object,at) --> [at].
 preposition(object,in) --> [in].

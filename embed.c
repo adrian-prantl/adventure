@@ -75,6 +75,8 @@ main(int argc, char **argv)
   win = initscr();
   timeout(-1);
   curs_set(1/*visibility*/);
+  noecho(); /* don't echo input */
+  cbreak(); /* don't wait for <return> */
   move(0,0);
 
   // Register foreign predicates with the interpreter
