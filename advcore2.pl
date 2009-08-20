@@ -3,10 +3,17 @@
 :- module(advcore2, [main/0]).
 :- use_module(library(assoc)).
 
+% Quit on compile-time error
+user:message_hook(_Term, error, Lines) :- 
+  %member(WE, [warning,error]),
+  print_message_lines(user_error, 'ERROR: ', Lines),
+  halt(1).
+
 main :-
-  cformat('Welcome!~n', []),
+  answer('Welcome!~n'),
   new_game(NewGame),
-  new_command(NewGame).
+  look(NewGame,S),
+  new_command(S).
 
 bye :- cformat('~nGoodbye!~n', []).
 
@@ -56,8 +63,8 @@ handle_char(S, C, WsR, CsR) :- char_code('\t', C), handle_tabulator(S, WsR, CsR)
 handle_char(S, C, WsR, CsR) :- backspace(C),       handle_backspace(S, WsR, CsR).
 handle_char(_, C,_WsR,_CsR) :- char_type(C, end_of_file), bye.
 handle_char(S, C, WsR, CsR) :- char_type(C, end_of_line), 
-  lists_sentence(WsR, CsR, Sentence),
-  (phrase(sentence(A), Sentence)
+  lists_sentence(WsR, CsR, Sentence),trace,
+  (phrase(sentence(A,S), Sentence)
   -> cwrite('\n'),
    action(S, S1, A),
    new_command(S1)
@@ -115,17 +122,17 @@ handle_backspace(S, WordsR, [_|CsR]) :-
 %-----------------------------------------------
 % Autocompletion
 
-finishes_sentence(_S, WordsR, CsR, Suffix, Words) :-
+finishes_sentence(S, WordsR, CsR, Suffix, Words) :-
   reverse(Cs, CsR),
   atom_codes(W1, Cs),
   % Append Letters
-  word(W2),
+  word(S,W2),
   atom_concat(W1, Suffix, W2),
   % ... and words
   reverse(Ws, [W2|WordsR]),
   append(Ws, Words, CsX),
   % and find an autocompletion
-  phrase(sentence(_), CsX).
+  phrase(sentence(_,S), CsX).
 finishes_sentence(_, _, _, ' ', []) :- repeat.
 
 autocomplete(S, WordsR, CsR) :- 
@@ -172,28 +179,59 @@ change(Key, Term) :-
   ; true),
   recorda(Key, Term).
 
-answer(Message) :- italic, cformat('~w~n', [Message]),  roman.
+answer(Message)     :- italic, cformat(Message, []), cwrite('\n'), roman.
 answer(Message, Xs) :- italic, cformat(Message, Xs), cwrite('\n'), roman.
+
+%-----------------------------------------------
+% Meta-macro system
+%-----------------------------------------------
+
+%% foldl(?List, ?Pred, ?Start, ?Result)
+% Fold a list left-to-right using Pred, just as you would do in Haskell.
+% ==
+% pred(LHS, RHS, Result)
+% ==
+% Thanks to Markus Triska for the definition.
+foldl([], _, Result, Result). 
+foldl(List, Pred, Start, Result) :- 
+  fold_lag(List, Start, Pred, Result). 
+
+fold_lag([], Result, _, Result). 
+fold_lag([RHS|Xs], LHS, Pred, Result) :- 
+  call(Pred, LHS, RHS, Accum), 
+  fold_lag(Xs, Accum, Pred, Result). 
 
 % This is a meta-predicate to save the author repetitive typing
 % Use it to associate Things with Descriptions
-declare(S, [], S).
-declare(S, [object(Name, Desc)|Xs], S1) :-
-  asserta(object(Name)),
-  asserta(description(Name, Desc)),
-  declare(S, Xs, S1).
-declare(S, [location(Room, Desc, Doors, Objects)|Xs], S2) :-
-  asserta(location(Room)),
+declare(S, Xs, S1) :-
+  foldl(Xs, declare1, S, S1).
+
+declare1(S, new_object(Name, Desc), S) :-
+  % Grammar
+  % an object is only part of the grammar if it is inside the current room
+  asserta(( object(S1, Name) :-
+	      get_assoc(here, S1, Here),
+	      get_assoc(inside(Name), S1, Here)) ),
+  asserta(( object(S1, Name) :- % or in my pocket!
+	      get_assoc(here, S1, Here),
+	      get_assoc(inside(Name), S1, inventory)) ),
+  % Set the Description
+  asserta(description(Name, Desc)).
+
+declare1(S, new_location(Room, Desc, Doors, Objects), S1) :-
+  % @todo only visited locations and direct doors
+  asserta(location(_,Room)),
   asserta(description(Room, Desc)),
   maplist(new_door(Room), Doors),
-  new_objects(S, Room, Objects, S1),
-  declare(S1, Xs, S2).
-declare(S, [person(Name, Desc)|Xs], S1) :-
-  asserta(person(Name)),
-  asserta(description(Name, Desc)),
-  declare(S, Xs, S1).
+  new_objects(S, Room, Objects, S1).
+declare1(S, new_person(Name, Desc), S) :-
+  asserta(person(_,Name)),
+  asserta(description(Name, Desc)).
+declare1(S, new_inside(Place, X), S1) :-
+  put_assoc(location(X), S, Place, S1).
+
 new_door(A, B) :- asserta(door(A, B)).
-new_object(S, Room, Object, S1) :- put_assoc(location(Object), S, Room, S1).
+new_object(S, Room, Object, S1) :- put_assoc(inside(Object), S, Room, S1).
 
 new_objects(S, _, [], S).
 new_objects(S, Room, [Object|Objects], S2) :-
@@ -217,19 +255,17 @@ new_game(NewGame) :-
   % nouns
   declare(S,
 [
- object(light,'It is hot.'),
- object(bread,'The bread seems extremely durable.'),
- object(lighter,'A real Zippo.'),
- object(stove,'Grandmother\'s stove.'),
+ new_object(light,'It is hot.'),
+ new_object(bread,'The bread seems extremely durable.'),
+ new_object(lighter,'A real Zippo.'),
+ new_object(stove,'Grandmother\'s stove.'),
 
- location([living,room], 'A cosy living room.',[kitchen],[lighter]),
- location(kitchen,'The kitchen is small.',[[living,room]],[gnome,stove]),
-
- person(gnome, 'Even for a gnome he seems unusually hairy.')
+ new_location([living,room], 'A cosy living room.',[kitchen],[lighter]),
+ new_location(kitchen,'The kitchen is small.',[[living,room]],[gnome,stove]),
+ new_inside(stove, bread),
+ new_person(gnome, 'Even for a gnome he seems unusually hairy.')
 ],
-	  S1),
-  put_assoc(location(bread), S1, stove, S2),
-  NewGame=S2.
+  NewGame).
 
 % properties
 inflammable(wood).
@@ -251,7 +287,7 @@ look(S, S) :-
 
 % List all objects via backtracking
 look_objects(S, Location, L) :-
-  gen_assoc(location(Obj), S, Location),
+  gen_assoc(inside(Obj), S, Location),
   answer('Inside the ~w there is a ~w.', [L, Obj]),
   fail.
 look_objects(_, _, _).
@@ -279,7 +315,7 @@ path_to(Here, Location, P, Path) :-
   path_to(There, Location, [There|P], Path).
 
 go(S, S, Location) :-
-  \+ location(Location), !,
+  \+ location(S, Location), !,
   answer('Sorry, ~w is not a place we can go to.', [Location]).
 go(S, S2, Location) :-
   ( get_assoc(here, S, Here),
@@ -309,10 +345,10 @@ go(S, S2, Location, Path) :- !,
 
 % take
 take(S, S1, Object) :-
-  object(Object)
+  object(S, Object)
   -> ( get_assoc(here, S, Here),
-       (get_assoc(location(Object), S, Here)
-       -> (put_assoc(location(Object), S, inventory, S1),
+       (get_assoc(inside(Object), S, Here)
+       -> (put_assoc(inside(Object), S, inventory, S1),
 	   answer('You now have the ~w.', [Object]))
        ; answer('There is no ~w around in the ~w.', [Object, Here])
        )
@@ -326,17 +362,17 @@ quit(S, S) :- bye, halt.
 % GRAMMAR
 
 % Begin - reverse rules
-word(W) :- phrase(det, Ws),                            member(W, Ws).
-word(W) :- phrase(trans_verb(_,_), Ws),                member(W, Ws).
-word(W) :- phrase(intrans_verb(_), Ws),                member(W, Ws).
-word(W) :- phrase(adverb(_), Ws),                      member(W, Ws).
-word(W) :- noun_type(T), phrase(noun(T,_), Ws),        member(W, Ws).
-word(W) :- noun_type(T), phrase(preposition(T,_), Ws), member(W, Ws).
+word(_,W) :- phrase(det, Ws),				  member(W, Ws).
+word(_,W) :- phrase(trans_verb(_,_), Ws),		  member(W, Ws).
+word(_,W) :- phrase(intrans_verb(_), Ws),		  member(W, Ws).
+word(_,W) :- phrase(adverb(_), Ws),			  member(W, Ws).
+word(S,W) :- noun_type(T), phrase(noun(S^T,_), Ws),        member(W, Ws).
+word(S,W) :- noun_type(T), phrase(preposition(S^T,_), Ws), member(W, Ws).
 % End - reverse rules
 
-sentence([Verb]) --> intrans_verb(Verb).
-sentence([Verb, Noun]) --> trans_verb(Type, Verb), nounphrase(Type, Noun).
-sentence([Verb, Noun]) -->
+sentence([Verb],_) --> intrans_verb(Verb).
+sentence([Verb, Noun],S) --> trans_verb(Type, Verb), nounphrase(S^Type, Noun).
+sentence([Verb, Noun],_) -->
   trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
 
 det --> [the].
@@ -347,8 +383,8 @@ det --> [an].
 nounphrase(Type,Noun) --> det,noun(Type,Noun).
 nounphrase(Type,Noun) --> noun(Type,Noun).
 
-noun(Type, Noun) --> { call(Type,Noun), atom(Noun) }, [Noun].
-noun(Type, Noun) --> { call(Type,Noun), is_list(Noun) }, Noun.
+noun(S^Type, Noun) --> { call(Type,S,Noun), atom(Noun) }, [Noun].
+noun(S^Type, Noun) --> { call(Type,S,Noun), is_list(Noun) }, Noun.
 
 verb(Type,V) --> trans_verb(Type,V).
 verb(intrans,V) --> intrans_verb(V).
