@@ -1,6 +1,6 @@
 :- use_module(advcore2).
 
-write_xy(_, _, _).
+write_xy(Text, _, _) :- write(Text).
 bold.
 italic.
 roman.

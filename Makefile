@@ -6,5 +6,11 @@ all: embed
 clean:
 	rm -f embed
 
+debug:
+	swipl -f debug.pl
+
+run: embed
+	./embed
+
 embed: embed.c
 	gcc $(PLFLAGS) -I$(BASE)/include -o embed embed.c -lcurses

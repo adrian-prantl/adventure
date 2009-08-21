@@ -27,6 +27,7 @@ format_xy(Format, Arguments, X, Y) :-
 
 new_command(S) :-
   prompt,
+  compound(S), % Type checking
   io_loop(S, [],[]).
 
 % Display the prompt and optionally redraw the user input
@@ -49,7 +50,7 @@ io_loop(S, WordsR, CsR) :-
   format_xy('Words = ~w, Cs = ~w~n', [WordsR,CsR], 0, 23),
   autocomplete(S, WordsR, CsR),
   getch(Char), !,
-  format_xy('Char = ~c (~w)~n', [Char,Char], 64, 0),
+  %format_xy('Char = ~c (~w)~n', [Char,Char], 64, 0),
   handle_char(S, Char, WordsR, CsR).
 
 % Switch over current Char
@@ -63,14 +64,14 @@ handle_char(S, C, WsR, CsR) :- char_code('\t', C), handle_tabulator(S, WsR, CsR)
 handle_char(S, C, WsR, CsR) :- backspace(C),       handle_backspace(S, WsR, CsR).
 handle_char(_, C,_WsR,_CsR) :- char_type(C, end_of_file), bye.
 handle_char(S, C, WsR, CsR) :- char_type(C, end_of_line), 
-  lists_sentence(WsR, CsR, Sentence),trace,
+  lists_sentence(WsR, CsR, Sentence),
   (phrase(sentence(A,S), Sentence)
   -> cwrite('\n'),
    action(S, S1, A),
    new_command(S1)
   ; prompt(WsR, CsR),
    italic, cwrite('\nSorry, I could not understand that!\n'), roman,
-   new_command(S1)
+   new_command(S)
    %cwrite('>'),
    %io_loop(WsR, CsR)
   ).
@@ -316,22 +317,26 @@ path_to(Here, Location, P, Path) :-
 
 go(S, S, Location) :-
   \+ location(S, Location), !,
-  answer('Sorry, ~w is not a place we can go to.', [Location]).
+  printable(Location, L),
+  answer('Sorry, ~w is not a place we can go to.', [L]).
 go(S, S2, Location) :-
   ( get_assoc(here, S, Here),
     path_to(Here, Location, Path),
     go(S, S2, Location, Path) )
   ; S = S2,
-  answer('Sorry, there is no way we can reach ~w at the moment.', [Location]).
+  printable(Location, L),
+  answer('Sorry, there is no way we can reach ~w at the moment.', [L]).
 go(S, S, Location, []) :- !,
-  answer('You are already in the ~w.', [Location]).
+  printable(Location, L),
+  answer('You are already in the ~w.', [L]).
 go(S, S2, Location, Path) :- !,
   put_assoc(here, S, Location, S1),
+  printable(Location, L),
   ( length(Path, 1)
-  -> answer('You are entering the ~w.', [Location])
+  -> answer('You are entering the ~w.', [L])
   ;  append(Path1, [_], Path), % skip the destination
      atomic_list_concat(Path1, ', ', PathL),
-     answer('Passing through ~w you move towards the ~w.', [PathL, Location])
+     answer('Passing through ~w you move towards the ~w.', [PathL, L])
   ),
   look(S1, S2).
 
@@ -383,6 +388,7 @@ det --> [an].
 nounphrase(Type,Noun) --> det,noun(Type,Noun).
 nounphrase(Type,Noun) --> noun(Type,Noun).
 
+% This is the bi-directional definition of noun/3
 noun(S^Type, Noun) --> { call(Type,S,Noun), atom(Noun) }, [Noun].
 noun(S^Type, Noun) --> { call(Type,S,Noun), is_list(Noun) }, Noun.
 
