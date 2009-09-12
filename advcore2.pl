@@ -343,14 +343,14 @@ go(S, S2, Location, Path) :- !,
 % take
 take(S, S1, Object) :-
   ( object(S, Object, Weight),
-    inventory(S, _, Weight),
-    
-  ->
-  ( get_assoc(here, S, Here),
-    ( get_assoc(inside(Object), S, Here) ->
-      ( put_assoc(inside(Object), S, inventory, S1),
-	answer('You now have the ~w.', [Object]) )
-    ; answer('There is no ~w around in the ~w.', [Object, Here])))
+    inventory(S, _, Weight) )
+  -> ( get_assoc(here, S, Here),
+       ( get_assoc(inside(Object), S, Here)
+       -> ( put_assoc(inside(Object), S, inventory, S1),
+	    answer('You now have the ~w.', [Object]) )
+       ; answer('There is no ~w around in the ~w.', [Object, Here])
+       )
+     )
   ; answer('The ~w is not something you can take with you.', [Object]).
 
 % quit
