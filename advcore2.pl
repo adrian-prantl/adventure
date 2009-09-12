@@ -340,24 +340,17 @@ go(S, S2, Location, Path) :- !,
   ),
   look(S1, S2).
 
-%reachable(A, B) :- door(A, B) ; door(B, A).
-%reachable(A, B) :- reachable(A, C), reachable(C, B).
-
-%go(Location) :-
-%  recorded(here, Here),
-%  reachable(Here, Location),
-%  change(here, Location).
-
 % take
 take(S, S1, Object) :-
-  object(S, Object)
-  -> ( get_assoc(here, S, Here),
-       (get_assoc(inside(Object), S, Here)
-       -> (put_assoc(inside(Object), S, inventory, S1),
-	   answer('You now have the ~w.', [Object]))
-       ; answer('There is no ~w around in the ~w.', [Object, Here])
-       )
-     )
+  ( object(S, Object, Weight),
+    inventory(S, _, Weight),
+    
+  ->
+  ( get_assoc(here, S, Here),
+    ( get_assoc(inside(Object), S, Here) ->
+      ( put_assoc(inside(Object), S, inventory, S1),
+	answer('You now have the ~w.', [Object]) )
+    ; answer('There is no ~w around in the ~w.', [Object, Here])))
   ; answer('The ~w is not something you can take with you.', [Object]).
 
 % quit
@@ -367,10 +360,10 @@ quit(S, S) :- bye, halt.
 % GRAMMAR
 
 % Begin - reverse rules
-word(_,W) :- phrase(det, Ws),				  member(W, Ws).
-word(_,W) :- phrase(trans_verb(_,_), Ws),		  member(W, Ws).
-word(_,W) :- phrase(intrans_verb(_), Ws),		  member(W, Ws).
-word(_,W) :- phrase(adverb(_), Ws),			  member(W, Ws).
+word(_,W) :- phrase(det, Ws),				   member(W, Ws).
+word(_,W) :- phrase(trans_verb(_,_), Ws),		   member(W, Ws).
+word(_,W) :- phrase(intrans_verb(_), Ws),		   member(W, Ws).
+word(_,W) :- phrase(adverb(_), Ws),			   member(W, Ws).
 word(S,W) :- noun_type(T), phrase(noun(S^T,_), Ws),        member(W, Ws).
 word(S,W) :- noun_type(T), phrase(preposition(S^T,_), Ws), member(W, Ws).
 % End - reverse rules
