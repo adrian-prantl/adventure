@@ -204,7 +204,7 @@
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>3A7E241F10B0502D007A9119</string>
+						<string>3A7E249C10B0909E007A9119</string>
 						<key>history</key>
 						<array>
 							<string>3A7E232C10AF20E5007A9119</string>
@@ -266,10 +266,10 @@
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>3A7E242010B0502D007A9119</string>
+						<string>3A7E249D10B0909E007A9119</string>
 						<key>history</key>
 						<array>
-							<string>3A7E233F10AFF077007A9119</string>
+							<string>3A7E245910B08CF0007A9119</string>
 						</array>
 					</dict>
 					<key>SplitCount</key>
@@ -286,6 +286,46 @@
 				<false/>
 				<key>RubberWindowFrame</key>
 				<string>733 133 396 448 0 0 1280 832 </string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Content</key>
+			<dict>
+				<key>PBXProjectModuleGUID</key>
+				<string>3A7E244010B08A95007A9119</string>
+				<key>PBXProjectModuleLabel</key>
+				<string>advcore2.pl</string>
+				<key>PBXSplitModuleInNavigatorKey</key>
+				<dict>
+					<key>Split0</key>
+					<dict>
+						<key>PBXProjectModuleGUID</key>
+						<string>3A7E244110B08A95007A9119</string>
+						<key>PBXProjectModuleLabel</key>
+						<string>advcore2.pl</string>
+						<key>_historyCapacity</key>
+						<integer>0</integer>
+						<key>bookmark</key>
+						<string>3A7E249E10B0909E007A9119</string>
+						<key>history</key>
+						<array>
+							<string>3A7E243B10B089FA007A9119</string>
+						</array>
+					</dict>
+					<key>SplitCount</key>
+					<string>1</string>
+				</dict>
+				<key>StatusBarVisibility</key>
+				<true/>
+			</dict>
+			<key>Geometry</key>
+			<dict>
+				<key>Frame</key>
+				<string>{{0, 20}, {548, 579}}</string>
+				<key>PBXModuleWindowStatusBarHidden2</key>
+				<false/>
+				<key>RubberWindowFrame</key>
+				<string>621 91 548 620 0 0 1280 832 </string>
 			</dict>
 		</dict>
 	</array>
@@ -609,18 +649,18 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>3A7E242110B0502D007A9119</string>
 		<string>3A7E22D210AEF7D7007A9119</string>
 		<string>3A7E22C510AEF794007A9119</string>
 		<string>3A7E22C610AEF794007A9119</string>
 		<string>3A7E22C310AEF794007A9119</string>
-		<string>1CD10A99069EF8BA00B06720</string>
 		<string>3A7E22C210AEF794007A9119</string>
 		<string>3AF2651410A7581B00822261</string>
-		<string>3A7E233D10AFF077007A9119</string>
 		<string>/Users/adrian/fun/prolog/adventure/adventure/adventure.xcodeproj</string>
-		<string>3A7E225F10AEE2A3007A9119</string>
+		<string>3A7E244010B08A95007A9119</string>
+		<string>3A7E233D10AFF077007A9119</string>
+		<string>1CD10A99069EF8BA00B06720</string>
 		<string>1C0AD2B3069F1EA900FABCE6</string>
+		<string>3A7E225F10AEE2A3007A9119</string>
 	</array>
 	<key>WindowString</key>
 	<string>498 332 690 397 0 0 1280 832 </string>
@@ -826,7 +866,7 @@
 			<key>WindowToolGUID</key>
 			<string>1CD10A99069EF8BA00B06720</string>
 			<key>WindowToolIsVisible</key>
-			<false/>
+			<true/>
 		</dict>
 		<dict>
 			<key>Identifier</key>

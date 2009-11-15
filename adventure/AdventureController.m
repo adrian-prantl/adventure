@@ -32,13 +32,18 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
   if (PL_get_atom_chars(a0, &s) && 
       PL_get_integer(a1, &x) && 
       PL_get_integer(a2, &y)) {
+	  // FIXME  design a better interface than this...
+    if (x == -1) {
     // if x, y < 0 use default cursor else draw at x,y and restore cursor pos
     //getyx(win, old_y, old_x);
     //move(y>=0?y:old_y, x>=0?x:old_x);
     //printw("%s", s);
     //getyx(win, new_y, new_x);
     //move(y>=0?old_y:new_y, x>=0?old_x:new_x)
-	[theController sayText :[NSString stringWithUTF8String :s]];
+		[[theController textView] insertText :[NSString stringWithUTF8String :s]];
+	} else {
+		NSLog([NSString stringWithUTF8String :s]);
+	}
     PL_succeed;
   } else {
     //printw("ERROR!");
@@ -47,9 +52,20 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
   }
 }
 
-foreign_t pl_bold()   { PL_succeed; }
-foreign_t pl_italic() { PL_succeed; }
-foreign_t pl_roman()  { PL_succeed; }
+foreign_t pl_bold()   { 
+	//[[theController textView] setFont :[NSFont boldSystemFontOfSize :14]];
+	PL_succeed; 
+}
+
+foreign_t pl_italic() { 
+	//[[theController textView] setFont :[NSFont systemFontOfSize:14]];
+	PL_succeed; 
+}
+
+foreign_t pl_roman()  { 
+	//[[theController textView] setFont :[NSFont menuFontOfSize :14]];
+	PL_succeed;
+}
 
 @implementation AdventureController
 
@@ -65,13 +81,12 @@ foreign_t pl_roman()  { PL_succeed; }
 - (IBAction)enterPressed:(id)sender
 {
     //[textView setString :[[tokenField objectValue] componentsJoinedByString :@" "]];
-	// Den puffer auffuellen!
+	// Den Puffer auffuellen!
 	[tokenField setObjectValue :nil];
 }
 
--(void) sayText :(NSString*) text
-{
-    [textView setString :text];
+-(NSTextView*) textView {
+	return textView;
 }
 
 - (NSArray *)tokenField:(NSTokenField *)tokenField 

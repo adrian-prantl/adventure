@@ -18,7 +18,7 @@
 	indexOfToken:(int)tokenIndex 
 	indexOfSelectedItem:(int *)selectedIndex;
 
--(void) sayText :(NSString*) text;
+-(NSTextView*) textView;
 -(void) prologEngine :(id)anObject;
 
 @end
