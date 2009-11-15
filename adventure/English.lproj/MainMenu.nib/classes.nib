@@ -1,4 +1,13 @@
 {
-    IBClasses = ({CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }); 
+    IBClasses = (
+        {
+            ACTIONS = {enterPressed = id; }; 
+            CLASS = AdventureController; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {enterButton = NSButton; textView = NSTextView; tokenField = NSTokenField; }; 
+            SUPERCLASS = NSObject; 
+        }, 
+        {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }
+    ); 
     IBVersion = 1; 
 }

@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3A7E225A10AEE04A007A9119 /* AdventureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A7E225910AEE04A007A9119 /* AdventureController.m */; };
+		3A7E238610AFFA68007A9119 /* libpl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A7E238510AFFA68007A9119 /* libpl.a */; };
+		3A7E238A10AFFB45007A9119 /* libreadline.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A7E238910AFFB45007A9119 /* libreadline.a */; };
+		3A7E239410B018BE007A9119 /* libncurses.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A7E239310B018BE007A9119 /* libncurses.a */; };
+		3A7E23A010B01B15007A9119 /* libgmp.3.5.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A7E239F10B01B15007A9119 /* libgmp.3.5.0.dylib */; };
+		3A7E23A610B02C19007A9119 /* advcore2.pl in Resources */ = {isa = PBXBuildFile; fileRef = 3A7E23A510B02C19007A9119 /* advcore2.pl */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
@@ -22,6 +28,13 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		32CA4F630368D1EE00C91783 /* adventure_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = adventure_Prefix.pch; sourceTree = "<group>"; };
+		3A7E225810AEE04A007A9119 /* AdventureController.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = AdventureController.h; sourceTree = "<group>"; };
+		3A7E225910AEE04A007A9119 /* AdventureController.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; path = AdventureController.m; sourceTree = "<group>"; };
+		3A7E238510AFFA68007A9119 /* libpl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpl.a; path = "/sw/lib/swipl-5.7.14/lib/powerpc-darwin/libpl.a"; sourceTree = "<absolute>"; };
+		3A7E238910AFFB45007A9119 /* libreadline.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libreadline.a; path = /sw/lib/libreadline.a; sourceTree = "<absolute>"; };
+		3A7E239310B018BE007A9119 /* libncurses.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libncurses.a; path = /sw/lib/ncurses/libncurses.a; sourceTree = "<absolute>"; };
+		3A7E239F10B01B15007A9119 /* libgmp.3.5.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgmp.3.5.0.dylib; path = /sw/lib/libgmp.3.5.0.dylib; sourceTree = "<absolute>"; };
+		3A7E23A510B02C19007A9119 /* advcore2.pl */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.script.perl; name = advcore2.pl; path = ../advcore2.pl; sourceTree = SOURCE_ROOT; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* adventure.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = adventure.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -32,6 +45,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
+				3A7E238610AFFA68007A9119 /* libpl.a in Frameworks */,
+				3A7E238A10AFFB45007A9119 /* libreadline.a in Frameworks */,
+				3A7E239410B018BE007A9119 /* libncurses.a in Frameworks */,
+				3A7E23A010B01B15007A9119 /* libgmp.3.5.0.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -74,11 +91,18 @@
 		29B97314FDCFA39411CA2CEA /* adventure */ = {
 			isa = PBXGroup;
 			children = (
+				3A7E23A510B02C19007A9119 /* advcore2.pl */,
+				3A7E239F10B01B15007A9119 /* libgmp.3.5.0.dylib */,
+				3A7E239310B018BE007A9119 /* libncurses.a */,
+				3A7E238910AFFB45007A9119 /* libreadline.a */,
+				3A7E238510AFFA68007A9119 /* libpl.a */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
+				3A7E225810AEE04A007A9119 /* AdventureController.h */,
+				3A7E225910AEE04A007A9119 /* AdventureController.m */,
 			);
 			name = adventure;
 			sourceTree = "<group>";
@@ -154,6 +178,7 @@
 			files = (
 				8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */,
 				8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */,
+				3A7E23A610B02C19007A9119 /* advcore2.pl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +190,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072D0486CEB800E47090 /* main.m in Sources */,
+				3A7E225A10AEE04A007A9119 /* AdventureController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -200,6 +226,13 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+					/sw/lib,
+					/sw/lib/ncurses,
+				);
+				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"/sw/lib/swipl-5.7.14/lib/powerpc-darwin\"";
 				PRODUCT_NAME = adventure;
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = YES;
@@ -217,6 +250,13 @@
 				GCC_MODEL_TUNING = G5;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1)",
+					/sw/lib,
+					/sw/lib/ncurses,
+				);
+				LIBRARY_SEARCH_PATHS_QUOTED_FOR_TARGET_1 = "\"/sw/lib/swipl-5.7.14/lib/powerpc-darwin\"";
 				PRODUCT_NAME = adventure;
 				WRAPPER_EXTENSION = app;
 			};
@@ -227,6 +267,12 @@
 			buildSettings = {
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "/sw/lib/swipl-5.7.14/include";
+				LIBRARY_SEARCH_PATHS = (
+					"/sw/lib/system-openssl/lib",
+					"/sw/lib/swipl-5.7.14/lib",
+				);
+				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
@@ -237,6 +283,12 @@
 			buildSettings = {
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "/sw/lib/swipl-5.7.14/include";
+				LIBRARY_SEARCH_PATHS = (
+					"/sw/lib/system-openssl/lib",
+					"/sw/lib/swipl-5.7.14/lib",
+				);
+				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};

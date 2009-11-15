@@ -8,7 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 
+int the_argc;
+char **the_argv;
+
 int main(int argc, char *argv[])
 {
+	the_argc=argc;
+	the_argv=argv;
     return NSApplicationMain(argc,  (const char **) argv);
 }
