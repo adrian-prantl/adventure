@@ -1,14 +1,16 @@
 #import "AdventureController.h"
 #include <SWI-Prolog.h>
+#include <unistd.h>
+#include <stdio.h>
 
 // Yeah, side-effects!
 // The communication between the SWI-Prolog thread and the Cocoa app is 
-// controlled by a few global Variables, and a global lock that controls
-// the access to these variables
+// controlled by a few global Variables, and an unnamed pipe.
 extern int the_argc;
 extern char **the_argv;
 static id theController = nil;
-static struct { int r; int w; } thePipe;
+static struct { int r; int w; } pipes[2];
+static FILE* completionsR, *completionsW;
 
 void abort_interpreter() {
   PL_cleanup(0);
@@ -19,7 +21,7 @@ foreign_t pl_getch(term_t a0)
 {
   unichar c;
   term_t t1 = PL_new_term_ref();
-  read(thePipe.r, &c, sizeof(unichar));
+  read(pipes[0].r, &c, sizeof(unichar));
   PL_put_integer(t1, c);
   PL_unify(a0, t1);
   PL_succeed;
@@ -41,6 +43,8 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
     //getyx(win, new_y, new_x);
     //move(y>=0?old_y:new_y, x>=0?old_x:new_x)
 		[[theController textView] insertText :[NSString stringWithUTF8String :s]];
+	} else if (x == 40) { 
+		fprintf(completionsW, "%s\n", s);
 	} else {
 		NSLog([NSString stringWithUTF8String :s]);
 	}
@@ -72,7 +76,10 @@ foreign_t pl_roman()  {
 - (id)init
 {
 	theController = [super init];
-	NSAssert(pipe(&thePipe) == 0, @"Could not create pipe!");
+	NSAssert(pipe(&pipes[0].r) == 0, @"Could not create pipe!");
+	NSAssert(pipe(&pipes[1].r) == 0, @"Could not create pipe!");
+	NSAssert(completionsR = fdopen(pipes[1].r, "r"), @"Could not open pipe R");
+	NSAssert(completionsW = fdopen(pipes[1].w, "w"), @"Could not open pipe W");
 	lastPos = 0;
 	[NSThread detachNewThreadSelector:@selector(prologEngine:) toTarget:self withObject:nil];
 	return theController;
@@ -95,16 +102,22 @@ foreign_t pl_roman()  {
 	indexOfSelectedItem:(int *)selectedIndex
 {
 	while (lastPos > [substring length]) { // remove characters
-		write(thePipe.w, (unichar)'\b', sizeof(unichar));
+		unichar c = '\b';
+		NSAssert(write(pipes[0].w, &c, sizeof(unichar)) == sizeof(unichar), @"I/O Error");
 		--lastPos;
 	}
 
 	while (lastPos < [substring length]) { // push characters
-		write(thePipe.w, [substring characterAtIndex:lastPos], sizeof(unichar));
+		unichar c = [substring characterAtIndex:lastPos];
+		NSAssert(write(pipes[0].w, &c, sizeof(unichar)) == sizeof(unichar), @"I/O Error");
 		++lastPos;
 	}
 	NSAssert(lastPos == [substring length], nil);
-	return nil; //[NSArray arrayWithObjects:@"1", @"2", nil];
+	
+	// Read the autocompletion suggestions from the pipe
+	char buf[128];
+	NSAssert(fgets(buf, 128, completionsR) > 0, @"I/O Error");
+	return [NSArray arrayWithObjects:[NSString stringWithUTF8String :buf], nil];
 }
 
 -(void) prologEngine :(id)anObject
@@ -149,6 +162,7 @@ foreign_t pl_roman()  {
   
   PL_halt(/*PL_toplevel() ?*/ 0/* : 1 */);
   [pool release];
+  NSAssert(false, @"Prolog process died!");
 }
 
 @end
