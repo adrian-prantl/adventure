@@ -136,6 +136,7 @@ finishes_sentence(S, WordsR, CsR, Suffix, Words) :-
   phrase(sentence(_,S), CsX).
 finishes_sentence(_, _, _, ' ', []) :- repeat.
 
+autocomplete(_, [], []). % Do not autocomplete an empty sentence
 autocomplete(S, WordsR, CsR) :- 
   %cwrite('\b\b\b\b\b['),
   recorda(count, 0),
@@ -148,8 +149,9 @@ autocomplete(S, WordsR, CsR) :-
     append([[Suffix], AC_Words, ['.','','','']], T),
     format_xy('~w ~w ~w ~w ~w~n', T, 40, Line),
     N1 is N+1, recorda(count, N1),
-  (N >= 3 -> true; fail).
-
+  (N >= 3 -> true; fail),
+  format_xy('$FXME~n', [], 40, N1).
+  
   %cwrite(']\n'),
   %print_line(WordsR, CsR),
   %io_loop(WordsR, CsR).

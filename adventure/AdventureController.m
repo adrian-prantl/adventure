@@ -10,7 +10,7 @@ extern int the_argc;
 extern char **the_argv;
 static id theController = nil;
 static struct { int r; int w; } pipes[2];
-static FILE* completionsR, *completionsW;
+static FILE* completionsR;
 
 void abort_interpreter() {
   PL_cleanup(0);
@@ -21,7 +21,9 @@ foreign_t pl_getch(term_t a0)
 {
   unichar c;
   term_t t1 = PL_new_term_ref();
+  NSLog(@"PL waiting...");
   read(pipes[0].r, &c, sizeof(unichar));
+  NSLog(@"PL ok.");
   PL_put_integer(t1, c);
   PL_unify(a0, t1);
   PL_succeed;
@@ -43,8 +45,9 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
     //getyx(win, new_y, new_x);
     //move(y>=0?old_y:new_y, x>=0?old_x:new_x)
 		[[theController textView] insertText :[NSString stringWithUTF8String :s]];
-	} else if (x == 40) { 
-		fprintf(completionsW, "%s\n", s);
+	} else if (x == 40) {
+		NSLog(@"PL Writing '%s'...",s);
+		write(pipes[1].w, s, strlen(s));
 	} else {
 		NSLog([NSString stringWithUTF8String :s]);
 	}
@@ -79,9 +82,9 @@ foreign_t pl_roman()  {
 	NSAssert(pipe(&pipes[0].r) == 0, @"Could not create pipe!");
 	NSAssert(pipe(&pipes[1].r) == 0, @"Could not create pipe!");
 	NSAssert(completionsR = fdopen(pipes[1].r, "r"), @"Could not open pipe R");
-	NSAssert(completionsW = fdopen(pipes[1].w, "w"), @"Could not open pipe W");
 	lastPos = 0;
 	[NSThread detachNewThreadSelector:@selector(prologEngine:) toTarget:self withObject:nil];
+			
 	return theController;
 }
 
@@ -101,23 +104,37 @@ foreign_t pl_roman()  {
 	indexOfToken:(int)tokenIndex 
 	indexOfSelectedItem:(int *)selectedIndex
 {
-	while (lastPos > [substring length]) { // remove characters
+	unsigned l = [substring length];
+	while (lastPos > l) { // remove characters
 		unichar c = '\b';
+		NSLog(@"User erased one character.");
 		NSAssert(write(pipes[0].w, &c, sizeof(unichar)) == sizeof(unichar), @"I/O Error");
 		--lastPos;
 	}
 
-	while (lastPos < [substring length]) { // push characters
+	while (lastPos < l) { // push characters
 		unichar c = [substring characterAtIndex:lastPos];
+		NSLog(@"User typed character '%c'.", c);
 		NSAssert(write(pipes[0].w, &c, sizeof(unichar)) == sizeof(unichar), @"I/O Error");
 		++lastPos;
 	}
-	NSAssert(lastPos == [substring length], nil);
+	NSAssert(lastPos == l, nil);
 	
 	// Read the autocompletion suggestions from the pipe
 	char buf[128];
-	NSAssert(fgets(buf, 128, completionsR) > 0, @"I/O Error");
-	return [NSArray arrayWithObjects:[NSString stringWithUTF8String :buf], nil];
+	unsigned i;
+	for (i = 0; i < l; ++i)
+		buf[i] = [substring characterAtIndex:i];
+		
+	NSMutableArray* completions = [NSMutableArray new];
+	while(1) {
+		NSLog(@"waiting...");
+		NSAssert(fgets(buf+l, 128-l, completionsR) > 0, @"I/O Error");
+		NSLog(@"received '%s' ... ok", buf);
+		if (buf[0] == '$') break;
+		[completions addObject:[NSString stringWithUTF8String :buf]];
+	}
+	return completions;
 }
 
 -(void) prologEngine :(id)anObject
