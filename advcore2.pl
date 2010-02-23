@@ -1,6 +1,6 @@
-% Adventure core
-% (C) 2007-2009 Adrian Prantl
-:- module(advcore2, [main/0]).
+% Adventure core 2nd edition
+% (C) 2007-2010 Adrian Prantl
+:- module(advcore2, [main/0,new_game/1,action/3]).
 :- use_module(library(assoc)).
 
 % Quit on compile-time error
