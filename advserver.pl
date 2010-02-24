@@ -14,6 +14,12 @@ user:message_hook(_Term, error, Lines) :-
 :- use_module(library(http/http_session)).
 
 :- use_module(advcore2).
+write_xy(Text, _, _) :- write(Text).
+bold.% :- write(bold).
+italic.% :- write(italic).
+roman.% :- write(roman).
+%getch(Ch) :- get_code(Ch).
+
 
 :- http_handler(root(.), welcome, []).
 :- http_handler(root(q), main_loop, []).
@@ -53,22 +59,32 @@ line_sentence(Line, Sentence) :-
   atom_chars(Line, Chars),
   tokenize(Chars, ' ', Sentence).
 
-tokenize([C|Cs], Seperator, [T|Ts]).
-tokenize([Seperator|Cs], Seperator, [T|Ts]).
-...
+tokenize(Chars, Seperator, Tokens) :-
+  tokenize(Chars, Seperator, [], Tokens).
+tokenize([Seperator|Cs], Seperator, RCs, [Token|Ts]) :- !,
+  reverse(RCs, T),
+  atom_chars(Token, T),
+  tokenize(Cs, Seperator, [], Ts).
+tokenize([], _, RCs, [Token]) :-
+  reverse(RCs, T),
+  atom_chars(Token, T).
+tokenize([C|Cs], Seperator, RCs, Tokens) :-
+  tokenize(Cs, Seperator, [C|RCs], Tokens).
+
 main_loop(Request) :-
   http_in_session(SessionId),
   
   % Readline
   http_parameters(Request, [ line(Line, [default='']) ]),
-  http_session_assert(history(Line)),
+  http_session_assert(history(['> ', span('style="reply"',Line)])),
 
   % Run the engine
   http_current_session(SessionId, state(State)),
   line_sentence(Line, Sentence),
   (   phrase(sentence(Action,State), Sentence)
-  ->  action(State, State1, Action),
-      http_session_retactall(state(_)),
+  ->  with_output_to(atom(Reply), action(State, State1, Action)),
+      http_session_assert(history(Reply)),
+      http_session_retractall(state(_)),
       http_session_assert(state(State1))
   ;   http_session_assert(history('Sorry, I could not understand that!'))
   ),

@@ -1,6 +1,6 @@
 % Adventure core 2nd edition
 % (C) 2007-2010 Adrian Prantl
-:- module(advcore2, [main/0,new_game/1,action/3]).
+:- module(advcore2, [main/0,new_game/1,action/3,sentence/4]).
 :- use_module(library(assoc)).
 
 % Quit on compile-time error
@@ -208,6 +208,7 @@ fold_lag([RHS|Xs], LHS, Pred, Result) :-
 % Use it to associate Things with Descriptions
 declare(S, Xs, S1) :-
   foldl(Xs, declare1, S, S1).
+%  phrase(declare1(Xs), S, S1).
 
 declare1(S, new_object(Name, Desc), S) :-
   % Grammar
