@@ -11,6 +11,7 @@ user:message_hook(_Term, error, Lines) :-
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/html_write)).
 :- use_module(library(http/http_parameters)).
+:- use_module(library(http/html_head)).
 :- use_module(library(http/http_session)).
 
 :- use_module(advcore2).
@@ -23,9 +24,24 @@ roman.% :- write(roman).
 
 :- http_handler(root(.), welcome, []).
 :- http_handler(root(q), main_loop, []).
+:- http_handler(css('adventure.css'), http_reply_file('adventure.css', []), []).
+
+http:location(css, root(css), []).
+
 
 server(Port) :-
-        http_server(http_dispatch, [port(Port)]).
+  http_server(http_dispatch, [port(Port)]).
+
+% css(URL) -->
+%   html_post(css,
+% 	    link([ type('text/css'),
+% 		   rel('stylesheet'),
+% 		   href(URL)
+% 		 ])).
+% js_script(URL) -->
+%   html_post(head, script([ src(URL),
+% 			   type('text/javascript')
+% 			 ], [])).
 
 welcome(_) :-
   Title = 'New! Adventure',
@@ -46,7 +62,10 @@ welcome(_) :-
   http_session_assert(state(State)),
 
   % Reply!
-  reply_html_page(title(Title),
+  reply_html_page([title(Title),
+		   %\html_receive(css)
+		   \html_requires(css('adventure.css'))
+		  ],
 		  [ h1(Title),
 		    p(History),
 		    p(form('action="q" method="get"',
@@ -107,6 +126,8 @@ main_loop(Request) :-
 	  ]
 	 ],
 	 Body),
-  reply_html_page(title(Title), Body).
+  reply_html_page([title(Title),
+		   \html_receive(css)
+		  ], Body).
 
 :- server(5000).
