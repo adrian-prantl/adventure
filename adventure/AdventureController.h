@@ -17,8 +17,20 @@
 	completionsForSubstring:(NSString *)substring 
 	indexOfToken:(int)tokenIndex 
 	indexOfSelectedItem:(int *)selectedIndex;
+- (NSString *)tokenField:(NSTokenField *)tokenField 
+    editingStringForRepresentedObject:(id)representedObject;
+- (id)tokenField:(NSTokenField *)tokenField 
+    representedObjectForEditingString:(NSString *)editingString;
 
--(NSTextView*) textView;
+-(void) writeText :(NSString*)text;
 -(void) prologEngine :(id)anObject;
+
+// NSTextView delegate methods
+-(void)keyUp:(NSEvent *)theEvent;
+- (NSArray *)textView:(NSTextView *)textView completions:(NSArray *)words forPartialWordRange:(NSRange)charRange indexOfSelectedItem:(int *)index;
+- (NSString *)textView:(NSTextView *)textView willDisplayToolTip:(NSString *)tooltip forCharacterAtIndex:(unsigned int)characterIndex;
+
+
+
 
 @end

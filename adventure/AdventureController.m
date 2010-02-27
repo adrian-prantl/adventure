@@ -9,9 +9,16 @@
 extern int the_argc;
 extern char **the_argv;
 static id theController = nil;
-static struct { int r; int w; } pipes[2];
-static FILE* completionsR;
+static struct { int r; int w; } thePipe;
+static NSMutableArray* completions = nil;
+static NSLock* completionsLock = nil;
+static bool completionsFull = NO;
 
+#define enterChar(c) do { \
+		unichar _c = c; \
+		NSAssert(write(thePipe.w, &_c, sizeof(unichar)) == sizeof(unichar), @"I/O Error"); \
+	} while (0)
+ 
 void abort_interpreter() {
   PL_cleanup(0);
  // ??
@@ -22,7 +29,7 @@ foreign_t pl_getch(term_t a0)
   unichar c;
   term_t t1 = PL_new_term_ref();
   NSLog(@"PL waiting...");
-  read(pipes[0].r, &c, sizeof(unichar));
+  read(thePipe.r, &c, sizeof(unichar));
   NSLog(@"PL ok.");
   PL_put_integer(t1, c);
   PL_unify(a0, t1);
@@ -36,6 +43,8 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
   if (PL_get_atom_chars(a0, &s) && 
       PL_get_integer(a1, &x) && 
       PL_get_integer(a2, &y)) {
+	NSString* str = [NSString stringWithUTF8String :s];
+	NSLog(str);
 	  // FIXME  design a better interface than this...
     if (x == -1) {
     // if x, y < 0 use default cursor else draw at x,y and restore cursor pos
@@ -44,16 +53,23 @@ foreign_t pl_write_xy(term_t a0, term_t a1, term_t a2)
     //printw("%s", s);
     //getyx(win, new_y, new_x);
     //move(y>=0?old_y:new_y, x>=0?old_x:new_x)
-		[[theController textView] insertText :[NSString stringWithUTF8String :s]];
+		[theController writeText :str];
 	} else if (x == 40) {
 		NSLog(@"PL Writing '%s'...",s);
-		write(pipes[1].w, s, strlen(s));
+		[completionsLock lock];
+		if (completionsFull) {
+			[completions removeAllObjects];
+			completionsFull = NO;
+		}
+		if (s[0] == '$') completionsFull = YES;
+		else [completions addObject :str];
+		[completionsLock unlock];
 	} else {
-		NSLog([NSString stringWithUTF8String :s]);
-	}
+	// Ignore
+  }
     PL_succeed;
   } else {
-    //printw("ERROR!");
+    NSLog(@"ERROR!");
     exit(1);
     PL_fail;
   }
@@ -79,24 +95,30 @@ foreign_t pl_roman()  {
 - (id)init
 {
 	theController = [super init];
-	NSAssert(pipe(&pipes[0].r) == 0, @"Could not create pipe!");
-	NSAssert(pipe(&pipes[1].r) == 0, @"Could not create pipe!");
-	NSAssert(completionsR = fdopen(pipes[1].r, "r"), @"Could not open pipe R");
+	NSAssert(pipe(&thePipe.r) == 0, @"Could not create pipe!");
+	completions = [NSMutableArray new];
+	completionsLock = [NSLock new];
 	lastPos = 0;
 	[NSThread detachNewThreadSelector:@selector(prologEngine:) toTarget:self withObject:nil];
-			
+	
 	return theController;
+}
+
+
+-(void) writeText :(NSString*)text
+{
+	while (textView == nil) {
+		sleep(1); // FIXME this is a horrible way to wait until the initialization of the UI is finished
+	}
+	[textView insertText:text];
 }
 
 - (IBAction)enterPressed:(id)sender
 {
+	enterChar('\n');
+	lastPos=0; // FIXME (possible race condition? those two operations should be atomic)
     //[textView setString :[[tokenField objectValue] componentsJoinedByString :@" "]];
-	// Den Puffer auffuellen!
 	[tokenField setObjectValue :nil];
-}
-
--(NSTextView*) textView {
-	return textView;
 }
 
 - (NSArray *)tokenField:(NSTokenField *)tokenField 
@@ -106,36 +128,58 @@ foreign_t pl_roman()  {
 {
 	unsigned l = [substring length];
 	while (lastPos > l) { // remove characters
-		unichar c = '\b';
 		NSLog(@"User erased one character.");
-		NSAssert(write(pipes[0].w, &c, sizeof(unichar)) == sizeof(unichar), @"I/O Error");
+		enterChar('\b');
 		--lastPos;
 	}
 
 	while (lastPos < l) { // push characters
 		unichar c = [substring characterAtIndex:lastPos];
 		NSLog(@"User typed character '%c'.", c);
-		NSAssert(write(pipes[0].w, &c, sizeof(unichar)) == sizeof(unichar), @"I/O Error");
+		enterChar(c);
 		++lastPos;
 	}
 	NSAssert(lastPos == l, nil);
 	
-	// Read the autocompletion suggestions from the pipe
-	char buf[128];
-	unsigned i;
-	for (i = 0; i < l; ++i)
-		buf[i] = [substring characterAtIndex:i];
-		
-	NSMutableArray* completions = [NSMutableArray new];
-	while(1) {
-		NSLog(@"waiting...");
-		NSAssert(fgets(buf+l, 128-l, completionsR) > 0, @"I/O Error");
-		NSLog(@"received '%s' ... ok", buf);
-		if (buf[0] == '$') break;
-		[completions addObject:[NSString stringWithUTF8String :buf]];
-	}
-	return completions;
+	[completionsLock lock];
+	NSArray* copy = [NSArray arrayWithArray :completions];
+	[completionsLock unlock];
+	return copy;
 }
+
+- (NSString *)tokenField:(NSTokenField *)tokenField 
+    editingStringForRepresentedObject:(id)representedObject
+{
+	return representedObject;
+}
+
+- (id)tokenField:(NSTokenField *)tokenField 
+	representedObjectForEditingString:(NSString *)editingString
+{
+	NSLog(@"representedObjectForEditingString(%@)",editingString);
+	// Remove newline
+	return [editingString substringToIndex :[editingString length]-1];
+}
+
+
+// NSTextView delegate methods
+- (void)keyUp:(NSEvent *)theEvent
+{
+	NSLog(@"YEAH! http://stackoverflow.com/questions/11291/cocoa-best-way-to-capture-key-events-in-nstextview");
+}
+
+- (NSArray *)textView:(NSTextView *)textView completions:(NSArray *)words 
+	forPartialWordRange:(NSRange)charRange indexOfSelectedItem:(int *)index
+{
+	return [NSArray arrayWithObject: @"HOWDY!"];
+}
+
+- (NSString *)textView:(NSTextView *)textView willDisplayToolTip:(NSString *)tooltip forCharacterAtIndex:(unsigned int)characterIndex
+{	
+	return @"Hi there!";
+}
+
+
 
 -(void) prologEngine :(id)anObject
 {
