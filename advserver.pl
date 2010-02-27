@@ -13,6 +13,9 @@ user:message_hook(_Term, error, Lines) :-
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/html_head)).
 :- use_module(library(http/http_session)).
+:- use_module(library(http/json)).
+:- use_module(library(http/json_convert)).
+:- use_module(library(http/http_json)).
 
 :- use_module(advcore2).
 write_xy(Text, _, _) :- write(Text).
@@ -21,29 +24,29 @@ italic.% :- write(italic).
 roman.% :- write(roman).
 %getch(Ch) :- get_code(Ch).
 
+% This has been my weekend project since early 2007. Literature:
+% Montfort, Nick ... AmZi Prolog ... Galakmit Dispenser .. Knuth port
 
 :- http_handler(root(.), welcome, []).
-:- http_handler(root(q), main_loop, []).
+:- http_handler(root(g), main_loop, []).
+:- http_handler(root(autocomplete), autocomplete, []).
 :- http_handler(css('adventure.css'), http_reply_file('adventure.css', []), []).
+:- http_handler(js_script('builder.js'), http_reply_file('contrib/builder.js', []), []).
+:- http_handler(js_script('controls.js'), http_reply_file('contrib/controls.js', []), []).
+:- http_handler(js_script('dragdrop.js'), http_reply_file('contrib/dragdrop.js', []), []).
+:- http_handler(js_script('effects.js'), http_reply_file('contrib/effects.js', []), []).
+:- http_handler(js_script('prototype.js'), http_reply_file('contrib/prototype.js', []), []).
+:- http_handler(js_script('scriptaculous.js'), http_reply_file('contrib/scriptaculous.js', []), []).
+:- http_handler(js_script('slider.js'), http_reply_file('contrib/slider.js', []), []).
 
 http:location(css, root(css), []).
+http:location(js_script, root(js_script), []).
 
 
 server(Port) :-
   http_server(http_dispatch, [port(Port)]).
 
-% css(URL) -->
-%   html_post(css,
-% 	    link([ type('text/css'),
-% 		   rel('stylesheet'),
-% 		   href(URL)
-% 		 ])).
-% js_script(URL) -->
-%   html_post(head, script([ src(URL),
-% 			   type('text/javascript')
-% 			 ], [])).
-
-welcome(_) :-
+welcome(_Request) :-
   Title = 'New! Adventure',
   History = 'Welcome!',
 
@@ -62,16 +65,15 @@ welcome(_) :-
   http_session_assert(state(State)),
 
   % Reply!
+%  http_redirect(moved_temporary, root(g), Request).
   reply_html_page([title(Title),
-		   %\html_receive(css)
 		   \html_requires(css('adventure.css'))
 		  ],
 		  [ h1(Title),
-		    p(History),
-		    p(form('action="q" method="get"',
+		    p(form('action="g" method="get"',
 			   [
-			    input('type="text" name="line"'),
-			    input('type="submit"')]))
+			    input('type="hidden" name="line" value="look"'),
+			    input('type="submit" value="Start"')]))
 		  ]).
 
 line_sentence(Line, Sentence) :-
@@ -94,8 +96,8 @@ main_loop(Request) :-
   http_in_session(SessionId),
   
   % Readline
-  http_parameters(Request, [ line(Line, [default='']) ]),
-  http_session_assert(history(['> ', span('style="reply"',Line)])),
+  http_parameters(Request, [ line(Line, [default('look')]) ]),
+  http_session_assert(history(['> ', span('class="reply"',Line)])),
 
   % Run the engine
   http_current_session(SessionId, state(State)),
@@ -118,16 +120,35 @@ main_loop(Request) :-
 	  ],
 	  History,
 	  [
-           p(form('action="q" method="get"',
+           p(form('action="g" method="get"',
 		  [
-		   input('type="text" name="line"'),
-		   input('type="submit"')
-		  ]))
+		   input('type="text" id="autocomplete" name="line"'),
+		   div('id="autocomplete_choices" class="autocomplete"',[]),
+		   input('type="submit" value="Do"')
+		  ])),
+	   script('type=text/javascript',
+		  'new Ajax.Autocompleter("autocomplete", "autocomplete_choices", "/autocomplete", {});')
+
 	  ]
 	 ],
 	 Body),
   reply_html_page([title(Title),
-		   \html_receive(css)
+		   \html_requires(css('adventure.css')),
+% 		   \html_requires(js_script('builder.js')),
+% 		   \html_requires(js_script('controls.js')),
+% 		   \html_requires(js_script('dragdrop.js')),
+		   \html_requires(js_script('prototype.js')),
+		   \html_requires(js_script('scriptaculous.js'))
+%		   \html_requires(js_script('slider.js'))
 		  ], Body).
+
+
+autocomplete(Request) :-
+  %http_in_session(SessionId),
+  http_parameters(Request, [ line(Line, [default('')]) ]),
+  %prolog_to_json(ul(li('your mom')), JSONOut),
+  %reply_json(JSONOut).%
+  reply_html_page([],ul(li('wawawawa'))).
+
 
 :- server(5000).
