@@ -1,6 +1,6 @@
 % Adventure core 2nd edition
 % (C) 2007-2010 Adrian Prantl
-:- module(advcore2, [main/0,new_game/1,action/3,sentence/4]).
+:- module(advcore2, [main/0,new_game/1,action/3,sentence/4,word/2]).
 :- use_module(library(assoc)).
 
 % Quit on compile-time error
@@ -121,7 +121,7 @@ handle_backspace(S, WordsR, [_|CsR]) :-
   io_loop(S, WordsR, CsR).
 
 %-----------------------------------------------
-% Autocompletion
+% Autocompletion with immediate I/O
 
 finishes_sentence(S, WordsR, CsR, Suffix, Words) :-
   reverse(Cs, CsR),

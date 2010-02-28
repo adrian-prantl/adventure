@@ -13,9 +13,9 @@ user:message_hook(_Term, error, Lines) :-
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/html_head)).
 :- use_module(library(http/http_session)).
-:- use_module(library(http/json)).
-:- use_module(library(http/json_convert)).
-:- use_module(library(http/http_json)).
+%:- use_module(library(http/json)).
+%:- use_module(library(http/json_convert)).
+%:- use_module(library(http/http_json)).
 
 :- use_module(advcore2).
 write_xy(Text, _, _) :- write(Text).
@@ -28,7 +28,7 @@ roman.% :- write(roman).
 % Montfort, Nick ... AmZi Prolog ... Galakmit Dispenser .. Knuth port
 
 :- http_handler(root(.), welcome, []).
-:- http_handler(root(g), main_loop, []).
+:- http_handler(root(run), main_loop, []).
 :- http_handler(root(autocomplete), autocomplete, []).
 :- http_handler(css('adventure.css'), http_reply_file('adventure.css', []), []).
 :- http_handler(js_script('builder.js'), http_reply_file('contrib/builder.js', []), []).
@@ -45,6 +45,10 @@ http:location(js_script, root(js_script), []).
 
 server(Port) :-
   http_server(http_dispatch, [port(Port)]).
+
+% ----------------------------------------------------------------------
+% Welcome page
+% ----------------------------------------------------------------------
 
 welcome(_Request) :-
   Title = 'New! Adventure',
@@ -65,16 +69,20 @@ welcome(_Request) :-
   http_session_assert(state(State)),
 
   % Reply!
-%  http_redirect(moved_temporary, root(g), Request).
+%  http_redirect(moved_temporary, root(run), Request).
   reply_html_page([title(Title),
 		   \html_requires(css('adventure.css'))
 		  ],
 		  [ h1(Title),
-		    p(form('action="g" method="get"',
+		    p(form('action="run" method="post"',
 			   [
 			    input('type="hidden" name="line" value="look"'),
 			    input('type="submit" value="Start"')]))
 		  ]).
+
+% ----------------------------------------------------------------------
+% Main Game Loop
+% ----------------------------------------------------------------------
 
 line_sentence(Line, Sentence) :-
   atom_chars(Line, Chars),
@@ -94,7 +102,7 @@ tokenize([C|Cs], Seperator, RCs, Tokens) :-
 
 main_loop(Request) :-
   http_in_session(SessionId),
-  
+
   % Readline
   http_parameters(Request, [ line(Line, [default('look')]) ]),
   http_session_assert(history(['> ', span('class="reply"',Line)])),
@@ -120,35 +128,66 @@ main_loop(Request) :-
 	  ],
 	  History,
 	  [
-           p(form('action="g" method="get"',
+           p(form('action="run" method="post"',
 		  [
-		   input('type="text" id="autocomplete" name="line"'),
+		   input('type="text" id="lineinput" name="line"'),
 		   div('id="autocomplete_choices" class="autocomplete"',[]),
 		   input('type="submit" value="Do"')
 		  ])),
 	   script('type=text/javascript',
-		  'new Ajax.Autocompleter("autocomplete", "autocomplete_choices", "/autocomplete", {});')
+		  'new Ajax.Autocompleter("lineinput", "autocomplete_choices", "/autocomplete", { method: \'get\', tokens: \' \' });')
 
 	  ]
 	 ],
 	 Body),
   reply_html_page([title(Title),
 		   \html_requires(css('adventure.css')),
-% 		   \html_requires(js_script('builder.js')),
-% 		   \html_requires(js_script('controls.js')),
-% 		   \html_requires(js_script('dragdrop.js')),
 		   \html_requires(js_script('prototype.js')),
 		   \html_requires(js_script('scriptaculous.js'))
-%		   \html_requires(js_script('slider.js'))
 		  ], Body).
 
 
+% ----------------------------------------------------------------------
+% Autocompletion
+% ----------------------------------------------------------------------
+
+
+line_words_cs(Line, Words, Cs) :-
+  atom_chars(Line, Chars),
+  split1(Chars, [], Words, Cs).
+
+% Split Chars at ' ', return list of words + list of Codes for the last Word
+split1([' '|Xs], XsR, [Word|Ws], Cs) :- !,
+  reverse(XsR, T),
+  atom_chars(Word, T),
+  split1(Xs, [], Ws, Cs).
+split1([], XsR, [], Xs) :-
+  reverse(XsR, Xs).
+split1([X|Xs], XsR, Words, Cs) :-
+  split1(Xs, [X|XsR], Words, Cs).
+
+
 autocomplete(Request) :-
-  %http_in_session(SessionId),
   http_parameters(Request, [ line(Line, [default('')]) ]),
-  %prolog_to_json(ul(li('your mom')), JSONOut),
-  %reply_json(JSONOut).%
-  reply_html_page([],ul(li('wawawawa'))).
+  http_in_session(SessionId),
+  http_current_session(SessionId, state(State)),
+  
+  line_words_cs(Line, Words, Cs),
+  
+  % Run the autocompletion
+  atom_codes(W1, Cs),
+  % Append Letters
+  word(State,W2),
+  atom_concat(W1, _Suffix, W2),
+  % ... and words
+  append([Words, [W2], _Completion], CsX),
 
+  % and find an autocompletion
+  phrase(sentence(_,State), CsX),
+  format(atom(A), '~w~n', CsX),
+  
+  % Return the autocompletion as an unsorted list
+  reply_html_page([],ul(li(A))).
 
+:- guitracer.
 :- server(5000).
