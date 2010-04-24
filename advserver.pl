@@ -16,6 +16,7 @@ user:message_hook(_Term, error, Lines) :-
 %:- use_module(library(http/json)).
 %:- use_module(library(http/json_convert)).
 %:- use_module(library(http/http_json)).
+:- use_module(nsols).
 
 :- use_module(advcore2).
 write_xy(Text, _, _) :- write(Text).
@@ -135,7 +136,8 @@ main_loop(Request) :-
 		   input('type="submit" value="Do"')
 		  ])),
 	   script('type=text/javascript',
-		  'new Ajax.Autocompleter("lineinput", "autocomplete_choices", "/autocomplete", { method: \'get\', tokens: \' \' });')
+		  'new Ajax.Autocompleter("lineinput", "autocomplete_choices", "/autocomplete", { method: \'get\' });')
+		  %'new Ajax.Autocompleter("lineinput", "autocomplete_choices", "/autocomplete", { method: \'get\', tokens: \' \' });')
 
 	  ]
 	 ],
@@ -150,7 +152,6 @@ main_loop(Request) :-
 % ----------------------------------------------------------------------
 % Autocompletion
 % ----------------------------------------------------------------------
-
 
 line_words_cs(Line, Words, Cs) :-
   atom_chars(Line, Chars),
@@ -171,8 +172,15 @@ autocomplete(Request) :-
   http_parameters(Request, [ line(Line, [default('')]) ]),
   http_in_session(SessionId),
   http_current_session(SessionId, state(State)),
-  
+
+  findnsols(5, li(C), autocomplete1(State, Line, C), Completions, []),
+
+  % Return the autocompletion as an unsorted list
+  reply_html_page([],ul(Completions)).
+
+autocomplete1(State, Line, Completion) :-
   line_words_cs(Line, Words, Cs),
+  %trace,Words=[look,at], Cs=[],
   
   % Run the autocompletion
   atom_codes(W1, Cs),
@@ -180,14 +188,12 @@ autocomplete(Request) :-
   word(State,W2),
   atom_concat(W1, _Suffix, W2),
   % ... and words
-  append([Words, [W2], _Completion], CsX),
-
+  append([Words, [W2], _C], CsX),
+  
   % and find an autocompletion
   phrase(sentence(_,State), CsX),
-  format(atom(A), '~w~n', CsX),
-  
-  % Return the autocompletion as an unsorted list
-  reply_html_page([],ul(li(A))).
+  %format(atom(A), '~w~n', CsX),
+  atomic_list_concat(CsX, ' ', Completion).
 
 :- guitracer.
 :- server(5000).
