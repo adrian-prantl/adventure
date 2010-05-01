@@ -231,8 +231,16 @@ Autocompleter.Base = Class.create({
   },
 
   selectEntry: function() {
-    this.active = false;
-    this.updateElement(this.getCurrentEntry());
+    //this.active = false;
+    //this.updateElement(this.getCurrentEntry());
+    this.active = false; 
+    if(this.index != -1){ 
+      this.updateElement(this.getCurrentEntry()); 
+    }else{ 
+      if (this.options.afterUpdateElement) 
+        this.options.afterUpdateElement(this.element, 
+                                        new Element('li', {id: '', name: ''})); 
+    }  
   },
 
   updateElement: function(selectedElement) {
@@ -283,7 +291,7 @@ Autocompleter.Base = Class.create({
       }
 
       this.stopIndicator();
-      this.index = 0;
+      this.index = -1; // http://groups.google.com/group/prototype-scriptaculous/browse_thread/thread/2e059019b77413b8/69d0408b96bc4df0?hl=en&lnk=gst&q=autocomplete+enter#69d0408b96bc4df0
 
       if(this.entryCount==1 && this.options.autoSelect) {
         this.selectEntry();

@@ -137,9 +137,10 @@ main_loop(Request) :-
 		   input('type="submit" value="Do"')
 		  ])),
 	   script('type=text/javascript',
-		  'new Ajax.Autocompleter("lineinput", "autocomplete_choices", "/autocomplete", { method: \'get\' });')
-		  %'new Ajax.Autocompleter("lineinput", "autocomplete_choices", "/autocomplete", { method: \'get\', tokens: \' \' });')
-
+		  'new Ajax.Autocompleter("lineinput",
+		                          "autocomplete_choices",
+		                          "/autocomplete",
+		                          { method: \'get\' });')
 	  ]
 	 ],
 	 Body),
