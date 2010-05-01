@@ -16,6 +16,7 @@ user:message_hook(_Term, error, Lines) :-
 %:- use_module(library(http/json)).
 %:- use_module(library(http/json_convert)).
 %:- use_module(library(http/http_json)).
+:- use_module(library(time)).
 :- use_module(nsols).
 
 :- use_module(advcore2).
@@ -173,12 +174,19 @@ autocomplete(Request) :-
   http_in_session(SessionId),
   http_current_session(SessionId, state(State)),
 
-  findnsols(5, li(C), autocomplete1(State, Line, C), Completions, []),
+  catch(call_with_time_limit(1, findnsols(5,
+					  li(C),
+					  autocomplete1(State, Line, C),
+					  Completions,
+					  [])),
+	time_limit_exceeded,
+	Completions = li('<timeout>')
+       ),
 
   % Return the autocompletion as an unsorted list
   reply_html_page([],ul(Completions)).
 
-autocomplete1(State, Line, Completion) :-
+autocomplete1(State, Line, Completion) :- 
   line_words_cs(Line, Words, Cs),
   %trace,Words=[look,at], Cs=[],
   
