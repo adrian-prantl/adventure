@@ -7,6 +7,7 @@ user:message_hook(_Term, error, Lines) :-
   print_message_lines(user_error, 'ERROR: ', Lines),
   halt(1).
 
+:- use_module(library(apply_macros)).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/html_write)).
@@ -16,6 +17,7 @@ user:message_hook(_Term, error, Lines) :-
 %:- use_module(library(http/json)).
 %:- use_module(library(http/json_convert)).
 %:- use_module(library(http/http_json)).
+:- use_module(library(clpfd)).
 :- use_module(library(time)).
 :- use_module(nsols).
 
@@ -175,7 +177,7 @@ autocomplete(Request) :-
   http_in_session(SessionId),
   http_current_session(SessionId, state(State)),
 
-  catch(call_with_time_limit(1, findnsols(5,
+  catch(call_with_time_limit(2, findnsols(5,
 					  li(C),
 					  autocomplete1(State, Line, C),
 					  Completions,
@@ -192,12 +194,20 @@ autocomplete1(State, Line, Completion) :-
   %trace,Words=[look,at], Cs=[],
   
   % Run the autocompletion
-  atom_codes(W1, Cs),
-  % Append Letters
-  word(State,W2),
-  atom_concat(W1, _Suffix, W2),
+  atom_codes(WordPrefix, Cs), 
+
+  % Append letters
+  findnsols(15, % fixme, should be find 5 unique solutions
+	    W,
+	    word(State,W),
+	    Ws), !,
+  member(Word, Ws),
+  atom_concat(WordPrefix, _Suffix, Word), 
+
   % ... and words
-  append([Words, [W2], _C], CsX),
+  L #< 5, 
+  length(Rest, L),
+  append([Words, [Word], Rest], CsX),
   
   % and find an autocompletion
   phrase(sentence(_,State), CsX),
