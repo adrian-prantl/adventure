@@ -184,6 +184,8 @@ change(Key, Term) :-
 
 answer(Message)     :- italic, cformat(Message, []), cwrite('\n'), roman.
 answer(Message, Xs) :- italic, cformat(Message, Xs), cwrite('\n'), roman.
+answer1(Message)    :- italic, cformat(Message, []), roman.
+answer1(Message,Xs) :- italic, cformat(Message, Xs), roman.
 
 %-----------------------------------------------
 % Meta-macro system
@@ -210,7 +212,10 @@ declare(S, Xs, S1) :-
   foldl(Xs, declare1, S, S1).
 %  phrase(declare1(Xs), S, S1).
 
-declare1(S, new_object(Name, Desc), S) :-
+declare1(S, new_object(Name, LongName), S) :-
+  declare1(S, new_object(Name, LongName, 'it has nothing special about it'), S).
+
+declare1(S, new_object(Name, LongName, Desc), S) :-
   % Grammar
   % an object is only part of the grammar if it is inside the current room
   asserta(( object(S1, Name) :-
@@ -220,6 +225,7 @@ declare1(S, new_object(Name, Desc), S) :-
 	      get_assoc(here, S1, Here),
 	      get_assoc(inside(Name), S1, inventory)) ),
   % Set the Description
+  asserta(long_name(Name, LongName)),
   asserta(description(Name, Desc)).
 
 declare1(S, new_location(Room, Desc, Doors, Objects), S1) :-
@@ -232,7 +238,7 @@ declare1(S, new_person(Name, Desc), S) :-
   asserta(person(_,Name)),
   asserta(description(Name, Desc)).
 declare1(S, new_inside(Place, X), S1) :-
-  put_assoc(location(X), S, Place, S1).
+  put_assoc(inside(X), S, Place, S1).
 
 new_door(A, B) :- asserta(door(A, B)).
 new_object(S, Room, Object, S1) :- put_assoc(inside(Object), S, Room, S1).
@@ -259,15 +265,16 @@ new_game(NewGame) :-
   % nouns
   declare(S,
 [
- new_object(light,'It is hot.'),
- new_object(bread,'The bread seems extremely durable.'),
- new_object(lighter,'A real Zippo.'),
- new_object(stove,'Grandmother\'s stove.'),
+ new_object(light,'a clear burning flame', 'It is hot.'),
+ new_object(bread,'a loaf of bread','The bread seems extremely durable.'),
+ new_object(lighter,'a lighter','A real Zippo.'),
+ new_object(stove,'grandmother\'s stove.'),
 
  new_location([living,room], 'A cosy living room.',[kitchen],[lighter]),
  new_location(kitchen,'The kitchen is small.',[[living,room]],[gnome,stove]),
  new_inside(stove, bread),
- new_person(gnome, 'Even for a gnome he seems unusually hairy.')
+ new_person(gnome, 'Even for a gnome he seems unusually hairy.'),
+ new_inside(inventory, lighter)
 ],
   NewGame).
 
@@ -276,6 +283,13 @@ inflammable(wood).
 bibulous(wood).
 
 material(door, wood).
+
+% helper prediucates
+
+
+%% carrying(+State, ?Obj)
+carrying(S, Obj) :-
+  gen_assoc(inside(Obj), S, inventory).
 
 % actions
 %--------------------------------------------------------------------
@@ -344,9 +358,8 @@ go(S, S2, Location, Path) :- !,
   look(S1, S2).
 
 % take
-take(S, S1, Object) :-
-  ( object(S, Object, Weight),
-    inventory(S, _, Weight) )
+take(S, S1, Object) :- %trace,
+  ( object(S, Object) %, Weight, inventory(S, _, Weight) 
   -> ( get_assoc(here, S, Here),
        ( get_assoc(inside(Object), S, Here)
        -> ( put_assoc(inside(Object), S, inventory, S1),
@@ -354,10 +367,29 @@ take(S, S1, Object) :-
        ; answer('There is no ~w around in the ~w.', [Object, Here])
        )
      )
-  ; answer('The ~w is not something you can take with you.', [Object]).
+  ; answer('The ~w is not something you can take with you.', [Object])
+  ).
 
 % quit
 quit(S, S) :- bye, halt.
+
+% inventory
+inventory(S, S) :-
+  answer1('You are carrying '),
+  ( list_inventory(S)
+  ; answer('nothing at all.')).
+
+% List all objects via backtracking
+list_inventory(S) :-
+  carrying(S, Obj),
+  long_name(Obj, LongName),
+  (var(First)
+  -> answer1(LongName), First=true
+  ;  answer1(', ~w', [LongName])
+  ),
+  fail.
+list_inventory(_) :- answer('.').
+
 
 %-----------------------------------------------
 % GRAMMAR
@@ -377,10 +409,11 @@ sentence([Verb, Noun],_) -->
   trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
 
 det --> [the].
-det --> [my].
 det --> [a].
 det --> [an].
+pers_det --> [my].
 
+nounphrase(S^Type,Noun) --> { carrying(S, Noun) }, pers_det, noun(S^Type,Noun).
 nounphrase(Type,Noun) --> det,noun(Type,Noun).
 nounphrase(Type,Noun) --> noun(Type,Noun).
 
@@ -425,3 +458,4 @@ intrans_verb(look) --> [look].
 intrans_verb(quit) --> [exit].
 intrans_verb(quit) --> [quit].
 intrans_verb(quit) --> [bye].
+intrans_verb(quit) --> [q].
