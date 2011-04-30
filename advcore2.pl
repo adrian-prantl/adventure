@@ -396,6 +396,7 @@ list_inventory(_) :- answer('.').
 
 % Begin - reverse rules
 word(_,W) :- phrase(det, Ws),				   member(W, Ws).
+word(_,W) :- phrase(pers_det, Ws),			   member(W, Ws).
 word(_,W) :- phrase(trans_verb(_,_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(intrans_verb(_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(adverb(_), Ws),			   member(W, Ws).

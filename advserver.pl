@@ -191,32 +191,6 @@ autocomplete(Request) :-
   ;  reply_html_page([],ul(Completions))
   ).
 
-% autocomplete1(State, Line, Completion) :- 
-%   line_words_cs(Line, Words, Cs),
-%   %trace,Words=[look,at], Cs=[],
-  
-%   % Run the autocompletion
-%   atom_codes(WordPrefix, Cs), 
-
-%   % Append letters
-%   findnsols(15, % fixme, should be find 5 unique solutions
-% 	    W,
-% 	    word(State,W),
-% 	    Ws), !,
-%   trace,
-%   member(Word, Ws),
-%   atom_concat(WordPrefix, _Suffix, Word), 
-
-%   % ... and words
-%   L #< 5, 
-%   length(Rest, L),
-%   append([Words, [Word], Rest], CsX),
-  
-%   % and find an autocompletion
-%   phrase(sentence(_,State), CsX),
-%   %format(atom(A), '~w~n', CsX),
-%   atomic_list_concat(CsX, ' ', Completion).
-
 autocomplete1(State, Line, Completion) :- 
   line_words_cs(Line, Words, Cs),
   %trace,Words=[look,at], Cs=[],
@@ -227,9 +201,9 @@ autocomplete1(State, Line, Completion) :-
   % I think we can improve performance here by using strings instead
   % of atoms for words. This way we can provide word/2 with a prefix
   % and don't need to guess all possible words
-  
+
   % Append letters
-  word(State,Word),
+  word(State, Word),
   %member(Word, Ws),
   atom_concat(WordPrefix, _Suffix, Word),
 
