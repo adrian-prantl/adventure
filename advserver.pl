@@ -29,7 +29,7 @@ roman.% :- write(roman).
 %getch(Ch) :- get_code(Ch).
 
 % This has been my weekend project since early 2007. Literature:
-% Montfort, Nick ... AmZi Prolog ... Galakmit Dispenser .. Knuth port
+% Montfort, Nick ... AmZi Prolog ... Galakmit Dispenser .. Knuth port .. Get Lamp
 
 :- http_handler(root(.), welcome, []).
 :- http_handler(root(run), main_loop, []).
@@ -138,11 +138,18 @@ main_loop(Request) :-
 		   div('id="autocomplete_choices" class="autocomplete"',[]),
 		   input('type="submit" value="Do"')
 		  ])),
-	   script('type=text/javascript',
+	   % additional space for the autocompletion box
+	   br(''),br(''),br(''),br(''),
+	   br(''),br(''),br(''),br(''),br('id=bottom'),
+	   % Autocompletion, focus on input field, scroll to bottom
+   	   script('type=text/javascript',
 		  'new Ajax.Autocompleter("lineinput",
 		                          "autocomplete_choices",
 		                          "/autocomplete",
-		                          { method: \'get\' });')
+		                          { method: \'get\' });
+		   lineinput.focus();
+		   bottom.scollIntoView();')
+
 	  ]
 	 ],
 	 Body),
