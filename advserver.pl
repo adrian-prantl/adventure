@@ -177,7 +177,6 @@ autocomplete(Request) :-
   http_in_session(SessionId),
   http_current_session(SessionId, state(State)),
 %  (Line='look a' -> gtrace ; true),
-
   catch(call_with_time_limit(2, findnsols(5,
 					  li(C),
 					  autocomplete1(State, Line, C),
@@ -186,9 +185,11 @@ autocomplete(Request) :-
 	time_limit_exceeded,
 	Completions = li('<timeout>')
        ),
-
   % Return the autocompletion as an unsorted list
-  reply_html_page([],ul(Completions)).
+  (  Completions = []
+  -> reply_html_page([],ul('I probably won\'t get that. So sorry!'))
+  ;  reply_html_page([],ul(Completions))
+  ).
 
 % autocomplete1(State, Line, Completion) :- 
 %   line_words_cs(Line, Words, Cs),
@@ -221,7 +222,7 @@ autocomplete1(State, Line, Completion) :-
   %trace,Words=[look,at], Cs=[],
   
   % Run the autocompletion
-  atom_codes(WordPrefix, Cs), 
+  atom_codes(WordPrefix, Cs),
 
   % I think we can improve performance here by using strings instead
   % of atoms for words. This way we can provide word/2 with a prefix
@@ -230,12 +231,14 @@ autocomplete1(State, Line, Completion) :-
   % Append letters
   word(State,Word),
   %member(Word, Ws),
-  atom_concat(WordPrefix, _Suffix, Word), 
+  atom_concat(WordPrefix, _Suffix, Word),
 
   % ... and words
-  L #< 5, % do only the first five words of a sentence
+  %L in 0..2, % do only the first four words of a sentence (? isn't is sentences up to length 4?)
+  (L=3;L=2;L=1;L=0),
   length(Rest, L),
-  append([Words, [Word], Rest], CsX),
+  append(Words, [Word|Rest], CsX),
+  print_message_lines(user_error, CsX,[]),
   
   % and find an autocompletion
   phrase(sentence(_,State), CsX),

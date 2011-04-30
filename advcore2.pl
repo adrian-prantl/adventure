@@ -415,7 +415,7 @@ pers_det --> [my].
 
 nounphrase(S^Type,Noun) --> { carrying(S, Noun) }, pers_det, noun(S^Type,Noun).
 nounphrase(Type,Noun) --> det,noun(Type,Noun).
-nounphrase(Type,Noun) --> noun(Type,Noun).
+%nounphrase(Type,Noun) --> noun(Type,Noun).
 
 % This is the bi-directional definition of noun/3
 noun(S^Type, Noun) --> { call(Type,S,Noun), atom(Noun) }, [Noun].

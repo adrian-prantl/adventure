@@ -1,5 +1,5 @@
 BASE=$(shell swipl --dump-runtime-variables | sed 's/"/ /g' | awk '/PLBASE/ {print $$2}')
-PLFLAGS=-L$(shell dirname `find $(BASE) -name libpl.a`) -lpl
+PLFLAGS=-L$(shell dirname `find $(BASE) -name libswipl.a`) -lswipl
 
 all: embed
 
@@ -11,6 +11,9 @@ debug:
 
 run: embed
 	./embed
+
+www:
+	open http://localhost:5000 && swipl -f advserver.pl
 
 embed: embed.c
 	gcc $(PLFLAGS) -I$(BASE)/include -o embed embed.c -lcurses
