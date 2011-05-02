@@ -440,10 +440,12 @@ inventory(S, S) :-
 
 % List all objects via backtracking
 list_inventory(S) :-
+  First = counter(0),
   carrying(S, Obj),
   long_name(Obj, LongName),
-  (var(First)
-  -> answer1(LongName), First=true
+  (  First = counter(0)
+  -> answer1(LongName),
+     nb_setarg(1, First, 1)
   ;  answer1(', ~w', [LongName])
   ),
   fail.
