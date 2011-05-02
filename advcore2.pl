@@ -219,9 +219,8 @@ declare1(S, new_object(Name, LongName, Desc), S) :-
   declare1(S, new_object(Name, LongName, Desc, []), S).
 
 declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
-  % Static grammar rule: An object is only part of the grammar if it
-  % is inside the current room or in the inventory.
-  asserta(( object(State, Name) :- here(State, Name)) ),
+  % this is now a static rule:
+  % asserta(( object(State, Name) :- here(State, Name)) ),
   maplist(wrapped(Name), Attrs, Attrs1),
   foldl(Attrs1, declare_attr, S, S1),
   % Set the Description
@@ -253,7 +252,6 @@ new_objects(S, _, [], S).
 new_objects(S, Room, [Object|Objects], S2) :-
   new_object(S, Room, Object, S1),
   new_objects(S1, Room, Objects, S2).
-
 
 printable([X|Xs], A) :- atomic_list_concat([X|Xs], ' ', A).
 printable(A, A) :- atom(A).
@@ -295,7 +293,7 @@ bibulous(wood).
 
 material(door, wood).
 
-% helper prediucates
+% helper predicates
 
 
 %% carrying(+State, ?Obj)
@@ -312,7 +310,20 @@ here(S, Obj) :- get_assoc(here, S, Here), gen_assoc(inside(Obj), S, Here).
 here(S, Obj) :-
   gen_assoc(inside(Obj), S, Container),
   gen_assoc(open(Container), S, true),
-  here(Container).
+  here(S, Container).
+
+% Static grammar rules
+object(S, Obj) :- here(S, Obj).
+
+% An object is only part of the grammar if it is inside the current
+% room or in the inventory.
+openable_object(S, Obj) :-
+  object(S, Obj),
+  get_assoc(can_be_opened(Obj), S, true).
+% An object that holds other objects
+container_object(S, Obj) :-
+  object(S, Obj),
+  inside_of(S, _, Obj).
 
 % actions
 %--------------------------------------------------------------------
@@ -453,9 +464,9 @@ word(S,W) :- noun_type(T), phrase(preposition(S^T,_), Ws), member(W, Ws).
 % End - reverse rules
 
 sentence([Verb],_) --> intrans_verb(Verb).
-sentence([open, Noun],S) --> trans_verb(Type, open), !,
-  nounphrase(S^Type, Noun),
-  { get_assoc(can_be_opened(Noun), S, true) }.
+%sentence([open, Noun],S) --> trans_verb(Type, open), !,
+%  nounphrase(S^Type, Noun),
+%  { get_assoc(can_be_opened(Noun), S, true) }.
 sentence([Verb, Noun],S) --> trans_verb(Type, Verb), nounphrase(S^Type, Noun).
 sentence([Verb, Noun],_) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
 
@@ -497,10 +508,10 @@ trans_verb(object, eat) --> [eat].
 trans_verb(object, turn_on) --> [turn,on].
 trans_verb(object, turn_off) --> [turn,off].
 trans_verb(person, talk_to) --> [talk,to].
-trans_verb(object, look_in) --> [look,in].
+trans_verb(container_object, look_in) --> [look,in].
 trans_verb(object, look_at) --> [look,at].
 trans_verb(person, look_at) --> [look,at].
-trans_verb(object, open) --> [open].
+trans_verb(openable_object, open) --> [open].
 trans_verb(location, go) --> [go].
 trans_verb(location, go) --> [enter].
 trans_verb(location, go) --> [walk].
