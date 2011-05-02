@@ -4,7 +4,7 @@
 :- use_module(library(assoc)).
 
 % Quit on compile-time error
-user:message_hook(_Term, error, Lines) :- 
+user:message_hook(_Term, error, Lines) :-
   %member(WE, [warning,error]),
   print_message_lines(user_error, 'ERROR: ', Lines),
   halt(1).
@@ -63,7 +63,7 @@ handle_char(S, C, WsR, CsR) :-
 handle_char(S, C, WsR, CsR) :- char_code('\t', C), handle_tabulator(S, WsR, CsR).
 handle_char(S, C, WsR, CsR) :- backspace(C),       handle_backspace(S, WsR, CsR).
 handle_char(_, C,_WsR,_CsR) :- char_type(C, end_of_file), bye.
-handle_char(S, C, WsR, CsR) :- char_type(C, end_of_line), 
+handle_char(S, C, WsR, CsR) :- char_type(C, end_of_line),
   lists_sentence(WsR, CsR, Sentence),
   (phrase(sentence(A,S), Sentence)
   -> cwrite('\n'),
@@ -137,7 +137,7 @@ finishes_sentence(S, WordsR, CsR, Suffix, Words) :-
 finishes_sentence(_, _, _, ' ', []) :- repeat.
 
 autocomplete(_, [], []). % Do not autocomplete an empty sentence
-autocomplete(S, WordsR, CsR) :- 
+autocomplete(S, WordsR, CsR) :-
   %cwrite('\b\b\b\b\b['),
   recorda(count, 0),
 
@@ -151,7 +151,7 @@ autocomplete(S, WordsR, CsR) :-
     N1 is N+1, recorda(count, N1),
   (N >= 3 -> true; fail),
   format_xy('$~n', [], 40, N1).
-  
+
   %cwrite(']\n'),
   %print_line(WordsR, CsR),
   %io_loop(WordsR, CsR).
@@ -197,14 +197,14 @@ answer1(Message,Xs) :- italic, cformat(Message, Xs), roman.
 % pred(LHS, RHS, Result)
 % ==
 % Thanks to Markus Triska for the definition.
-foldl([], _, Result, Result). 
-foldl(List, Pred, Start, Result) :- 
-  fold_lag(List, Start, Pred, Result). 
+foldl([], _, Result, Result).
+foldl(List, Pred, Start, Result) :-
+  fold_lag(List, Start, Pred, Result).
 
-fold_lag([], Result, _, Result). 
-fold_lag([RHS|Xs], LHS, Pred, Result) :- 
-  call(Pred, LHS, RHS, Accum), 
-  fold_lag(Xs, Accum, Pred, Result). 
+fold_lag([], Result, _, Result).
+fold_lag([RHS|Xs], LHS, Pred, Result) :-
+  call(Pred, LHS, RHS, Accum),
+  fold_lag(Xs, Accum, Pred, Result).
 
 % This is a meta-predicate to save the author repetitive typing
 % Use it to associate Things with Descriptions
@@ -213,17 +213,17 @@ declare(S, Xs, S1) :-
 %  phrase(declare1(Xs), S, S1).
 
 declare1(S, new_object(Name, LongName), S) :-
-  declare1(S, new_object(Name, LongName, 'it has nothing special about it'), S).
+  declare1(S, new_object(Name, LongName, 'it has nothing special about it', []), S).
 
 declare1(S, new_object(Name, LongName, Desc), S) :-
-  % Grammar
-  % an object is only part of the grammar if it is inside the current room
-  asserta(( object(S1, Name) :-
-	      get_assoc(here, S1, Here),
-	      get_assoc(inside(Name), S1, Here)) ),
-  asserta(( object(S1, Name) :- % or in my pocket!
-	      get_assoc(here, S1, Here),
-	      get_assoc(inside(Name), S1, inventory)) ),
+  declare1(S, new_object(Name, LongName, Desc, []), S).
+
+declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
+  % Static grammar rule: An object is only part of the grammar if it
+  % is inside the current room or in the inventory.
+  asserta(( object(State, Name) :- here(State, Name)) ),
+  maplist(wrapped(Name), Attrs, Attrs1),
+  foldl(Attrs1, declare_attr, S, S1),
   % Set the Description
   asserta(long_name(Name, LongName)),
   asserta(description(Name, Desc)).
@@ -239,6 +239,12 @@ declare1(S, new_person(Name, Desc), S) :-
   asserta(description(Name, Desc)).
 declare1(S, new_inside(Place, X), S1) :-
   put_assoc(inside(X), S, Place, S1).
+
+wrapped(Arg, Functor, Term) :-
+  Term =.. [Functor, Arg].
+
+declare_attr(S, Attribute, S1) :-
+  put_assoc(Attribute, S, true, S1).
 
 new_door(A, B) :- asserta(door(A, B)).
 new_object(S, Room, Object, S1) :- put_assoc(inside(Object), S, Room, S1).
@@ -261,14 +267,15 @@ noun_type(location).
 noun_type(person).
 
 new_game(NewGame) :-
-  list_to_assoc([here-'kitchen'], S), 
+  list_to_assoc([here-'kitchen'], S),
   % nouns
   declare(S,
 [
  new_object(light,'a clear burning flame', 'It is hot.'),
  new_object(bread,'a loaf of bread','The bread seems extremely durable.'),
  new_object(lighter,'a lighter','A real Zippo.'),
- new_object(stove,'grandmother\'s stove.'),
+ new_object(stove,'grandmother\'s stove.',
+	    'It is made out of shiny white emaille.', [can_be_opened]),
 
  new_location([living,room], 'A cosy living room.',[kitchen],[lighter]),
  new_location(kitchen,'The kitchen is small.',[[living,room]],[gnome,stove]),
@@ -276,7 +283,11 @@ new_game(NewGame) :-
  new_person(gnome, 'Even for a gnome he seems unusually hairy.'),
  new_inside(inventory, lighter)
 ],
-  NewGame).
+  NewGame),
+  % Now seal off the Prolog engine
+  retractall(assert),
+  retractall(asserta),
+  retractall(assertz).
 
 % properties
 inflammable(wood).
@@ -288,8 +299,20 @@ material(door, wood).
 
 
 %% carrying(+State, ?Obj)
-carrying(S, Obj) :-
-  gen_assoc(inside(Obj), S, inventory).
+carrying(S, Obj) :- gen_assoc(inside(Obj), S, inventory).
+
+%% inside_of(+State, ?Obj, ?ContainerOrRoom)
+inside_of(S, Obj, ContainerOrRoom) :- gen_assoc(inside(Obj), S, ContainerOrRoom).
+
+%% here(+State, ?Obj)
+% An object is here if it is in the inventory, the current room or
+% inside an open object that is here.
+here(S, Obj) :- carrying(S, Obj).
+here(S, Obj) :- get_assoc(here, S, Here), gen_assoc(inside(Obj), S, Here).
+here(S, Obj) :-
+  gen_assoc(inside(Obj), S, Container),
+  gen_assoc(open(Container), S, true),
+  here(Container).
 
 % actions
 %--------------------------------------------------------------------
@@ -305,12 +328,21 @@ look(S, S) :-
 
 % List all objects via backtracking
 look_objects(S, Location, L) :-
-  gen_assoc(inside(Obj), S, Location),
-  answer('Inside the ~w there is a ~w.', [L, Obj]),
+  inside_of(S, Obj, Location),
+  printable(Obj, ObjName),
+  answer('Inside the ~w there is a ~w.', [L, ObjName]),
+  look_inside_objects(S, Obj),
   fail.
 look_objects(_, _, _).
 
-look_doors(Location) :- 
+% helper for container objects
+look_inside_objects(S, Obj) :-
+  (  get_assoc(open(Obj), S, true)
+  -> printable(Obj, O),
+     look_objects(S, Obj, O)
+  ;  true).
+
+look_doors(Location) :-
   door(Location, Room),
   printable(Room, R),
   answer('From here you can go to the ~w.', [R]),
@@ -321,7 +353,25 @@ look_doors(_).
 look_at(S, S, X) :-
   description(X, Desc),
   answer('~w~n', [Desc]),
-  look_objects(S, X, X). % fixme 
+  look_objects(S, X, X). % fixme
+
+% look in
+look_in(S, S, X) :-
+  look_objects(S, X, X).
+
+% open
+:- retractall(open(_,_,_)). % clashes with file i/o predicate otherwise
+open(S, S1, Obj) :-
+  printable(Obj, ObjName),
+  (  get_assoc(can_be_opened(Obj), S, true)
+  ->
+     put_assoc(open(Obj), S, true, S1),
+     look_objects(S1, Obj, ObjName),
+     answer('Behold, the ~w is now open.~n', [ObjName])
+  ;
+     answer('You cannot open ~w!~n', [ObjName])
+  ).
+
 
 % go
 path_to(A, B, Path) :-
@@ -359,13 +409,11 @@ go(S, S2, Location, Path) :- !,
 
 % take
 take(S, S1, Object) :- %trace,
-  ( object(S, Object) %, Weight, inventory(S, _, Weight) 
-  -> ( get_assoc(here, S, Here),
-       ( get_assoc(inside(Object), S, Here)
+  ( object(S, Object) %, Weight, inventory(S, _, Weight)
+  -> ( here(S, Object)
        -> ( put_assoc(inside(Object), S, inventory, S1),
 	    answer('You now have the ~w.', [Object]) )
-       ; answer('There is no ~w around in the ~w.', [Object, Here])
-       )
+       ; answer('There is no ~w within sight.', [Object])
      )
   ; answer('The ~w is not something you can take with you.', [Object])
   ).
@@ -405,9 +453,11 @@ word(S,W) :- noun_type(T), phrase(preposition(S^T,_), Ws), member(W, Ws).
 % End - reverse rules
 
 sentence([Verb],_) --> intrans_verb(Verb).
+sentence([open, Noun],S) --> trans_verb(Type, open), !,
+  nounphrase(S^Type, Noun),
+  { get_assoc(can_be_opened(Noun), S, true) }.
 sentence([Verb, Noun],S) --> trans_verb(Type, Verb), nounphrase(S^Type, Noun).
-sentence([Verb, Noun],_) -->
-  trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
+sentence([Verb, Noun],_) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
 
 det --> [the].
 det --> [a].
@@ -450,6 +500,7 @@ trans_verb(person, talk_to) --> [talk,to].
 trans_verb(object, look_in) --> [look,in].
 trans_verb(object, look_at) --> [look,at].
 trans_verb(person, look_at) --> [look,at].
+trans_verb(object, open) --> [open].
 trans_verb(location, go) --> [go].
 trans_verb(location, go) --> [enter].
 trans_verb(location, go) --> [walk].
