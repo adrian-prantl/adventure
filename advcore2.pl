@@ -371,8 +371,8 @@ look_in(S, S, X) :-
   look_objects(S, X, X).
 
 % open
-:- retractall(open(_,_,_)). % clashes with file i/o predicate otherwise
-open(S, S1, Obj) :-
+%:- retractall(open(_,_,_)). % clashes with file i/o predicate otherwise
+open_(S, S1, Obj) :-
   printable(Obj, ObjName),
   (  get_assoc(can_be_opened(Obj), S, true)
   ->
@@ -442,11 +442,11 @@ inventory(S, S) :-
 list_inventory(S) :-
   First = counter(0),
   carrying(S, Obj),
-  long_name(Obj, LongName),
+  printable(Obj, ObjName),
   (  First = counter(0)
-  -> answer1(LongName),
+  -> answer1(ObjName),
      nb_setarg(1, First, 1)
-  ;  answer1(', ~w', [LongName])
+  ;  answer1(', ~w', [ObjName])
   ),
   fail.
 list_inventory(_) :- answer('.').
@@ -462,19 +462,16 @@ word(_,W) :- phrase(trans_verb(_,_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(intrans_verb(_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(adverb(_), Ws),			   member(W, Ws).
 word(S,W) :- noun_type(T), phrase(noun(S^T,_), Ws),        member(W, Ws).
-word(S,W) :- noun_type(T), phrase(preposition(S^T,_), Ws), member(W, Ws).
+word(_,W) :- noun_type(T), phrase(preposition(T,_), Ws), member(W, Ws).
 % End - reverse rules
 
 sentence([Verb],_) --> intrans_verb(Verb).
-%sentence([open, Noun],S) --> trans_verb(Type, open), !,
-%  nounphrase(S^Type, Noun),
-%  { get_assoc(can_be_opened(Noun), S, true) }.
+sentence([Verb, Noun],S) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(S^Type, Noun).
 sentence([Verb, Noun],S) --> trans_verb(Type, Verb), nounphrase(S^Type, Noun).
-sentence([Verb, Noun],_) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
 
 det --> [the].
-det --> [a].
-det --> [an].
+%det --> [a].
+%det --> [an].
 pers_det --> [my].
 
 nounphrase(S^Type,Noun) --> { carrying(S, Noun) }, pers_det, noun(S^Type,Noun).
@@ -495,7 +492,7 @@ intrans(_) :- fail.
 % use saw with bread -> key
 
 preposition(object,at) --> [at].
-preposition(object,in) --> [in].
+preposition(container_object,in) --> [in].
 preposition(location,to) --> [to].
 preposition(location,to) --> [into].
 preposition(location,to) --> [inside].
@@ -511,9 +508,9 @@ trans_verb(object, turn_on) --> [turn,on].
 trans_verb(object, turn_off) --> [turn,off].
 trans_verb(person, talk_to) --> [talk,to].
 trans_verb(container_object, look_in) --> [look,in].
-trans_verb(object, look_at) --> [look,at].
-trans_verb(person, look_at) --> [look,at].
-trans_verb(openable_object, open) --> [open].
+trans_verb(object, look_at) --> [look].
+trans_verb(person, look_at) --> [look].
+trans_verb(openable_object, open_) --> [open].
 trans_verb(location, go) --> [go].
 trans_verb(location, go) --> [enter].
 trans_verb(location, go) --> [walk].
