@@ -462,19 +462,16 @@ word(_,W) :- phrase(trans_verb(_,_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(intrans_verb(_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(adverb(_), Ws),			   member(W, Ws).
 word(S,W) :- noun_type(T), phrase(noun(S^T,_), Ws),        member(W, Ws).
-word(S,W) :- noun_type(T), phrase(preposition(S^T,_), Ws), member(W, Ws).
+word(_,W) :- noun_type(T), phrase(preposition(T,_), Ws), member(W, Ws).
 % End - reverse rules
 
 sentence([Verb],_) --> intrans_verb(Verb).
-%sentence([open, Noun],S) --> trans_verb(Type, open), !,
-%  nounphrase(S^Type, Noun),
-%  { get_assoc(can_be_opened(Noun), S, true) }.
+sentence([Verb, Noun],S) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(S^Type, Noun).
 sentence([Verb, Noun],S) --> trans_verb(Type, Verb), nounphrase(S^Type, Noun).
-sentence([Verb, Noun],_) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(Type, Noun).
 
 det --> [the].
-det --> [a].
-det --> [an].
+%det --> [a].
+%det --> [an].
 pers_det --> [my].
 
 nounphrase(S^Type,Noun) --> { carrying(S, Noun) }, pers_det, noun(S^Type,Noun).
@@ -495,7 +492,7 @@ intrans(_) :- fail.
 % use saw with bread -> key
 
 preposition(object,at) --> [at].
-preposition(object,in) --> [in].
+preposition(container_object,in) --> [in].
 preposition(location,to) --> [to].
 preposition(location,to) --> [into].
 preposition(location,to) --> [inside].
