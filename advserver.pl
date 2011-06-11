@@ -114,7 +114,7 @@ main_loop(Request) :-
   % Run the engine
   http_current_session(SessionId, state(State)),
   line_sentence(Line, Sentence),
-  (   phrase(sentence(Action,State), Sentence)
+  (   phrase(sentence(Action, State), Sentence)
   ->  with_output_to(atom(Reply), action(State, State1, Action)),
       http_session_assert(history(Reply)),
       http_session_retractall(state(_)),
@@ -126,7 +126,9 @@ main_loop(Request) :-
   http_current_session(SessionId, title(Title)), 
   findall(p(H), http_current_session(SessionId, history(H)), History), 
 
-  append([[  form('action="/" method="link"',
+  (Action = [quit|_]
+  -> Body = [h1(Title)|History]
+  ;  append([[  form('action="/" method="link"',
 		  [input('type="submit" value="restart"')]),
 	     h1(Title)
 	  ],
@@ -152,12 +154,18 @@ main_loop(Request) :-
 
 	  ]
 	 ],
-	 Body),
+	 Body)
+  ),
   reply_html_page([title(Title),
 		   \html_requires(css('adventure.css')),
 		   \html_requires(js_script('prototype.js')),
 		   \html_requires(js_script('scriptaculous.js'))
-		  ], Body).
+		  ], Body),
+
+  % End Session if user quits
+  (Action = [quit|_]
+  -> http_close_session(SessionId)
+  ; true).
 
 
 % ----------------------------------------------------------------------

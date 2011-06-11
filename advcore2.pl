@@ -432,7 +432,7 @@ take(S, S1, Object) :- %trace,
   ).
 
 % quit
-quit(S, S) :- bye, halt.
+quit(S, S) :- bye.
 
 % inventory
 inventory(S, S) :-
@@ -509,7 +509,7 @@ synonym_of(SynIds, Synonym) :-
   s(SynId, _, S, _, _, _),
   atomic_list_concat(Synonym, ' ', S).
 
-trans_verb(object, take) --> { synonym_of([202205272, 200173338], Take), Take.
+trans_verb(object, take) --> { synonym_of([202205272, 200173338], Take) }, Take.
 trans_verb(object, drop) --> [drop].
 trans_verb(object, eat) --> [eat].
 trans_verb(object, turn_on) --> { synonym_of([201510399], TurnOn) }, TurnOn.
