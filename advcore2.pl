@@ -3,6 +3,8 @@
 :- module(advcore2, [main/0,new_game/1,action/3,sentence/4,word/2]).
 :- use_module(library(assoc)).
 
+:- use_module('contrib/wordnet/wn_s').
+
 % Quit on compile-time error
 user:message_hook(_Term, error, Lines) :-
   %member(WE, [warning,error]),
@@ -491,7 +493,7 @@ intrans(_) :- fail.
 % take anvil?
 % use saw with bread -> key
 
-preposition(object,at) --> [at].
+%preposition(object,at) --> [at].
 preposition(container_object,in) --> [in].
 preposition(location,to) --> [to].
 preposition(location,to) --> [into].
@@ -501,15 +503,21 @@ preposition(location,to) --> [towards].
 adverb(on) --> [on].
 adverb(off) --> [off].
 
-trans_verb(object, take) --> [take].
+% use s(S, _, 'word', _, _, _), s(S, _, Synonym, _, _, _), g(S, Gloss). to get the syn_id for a word.
+synonym_of(SynIds, Synonym) :-
+  member(SynId, SynIds),
+  s(SynId, _, S, _, _, _),
+  atomic_list_concat(Synonym, ' ', S).
+
+trans_verb(object, take) --> { synonym_of([202205272, 200173338], Take), Take.
 trans_verb(object, drop) --> [drop].
 trans_verb(object, eat) --> [eat].
-trans_verb(object, turn_on) --> [turn,on].
-trans_verb(object, turn_off) --> [turn,off].
+trans_verb(object, turn_on) --> { synonym_of([201510399], TurnOn) }, TurnOn.
+trans_verb(object, turn_off) --> { synonym_of([201510576], TurnOff) }, TurnOff.
 trans_verb(person, talk_to) --> [talk,to].
 trans_verb(container_object, look_in) --> [look,in].
-trans_verb(object, look_at) --> [look].
-trans_verb(person, look_at) --> [look].
+trans_verb(object, look_at) --> { synonym_of([202130300], LookAt) }, LookAt.
+trans_verb(person, look_at) --> { synonym_of([202130300], LookAt) }, LookAt.
 trans_verb(openable_object, open_) --> [open].
 trans_verb(location, go) --> [go].
 trans_verb(location, go) --> [enter].
@@ -517,7 +525,5 @@ trans_verb(location, go) --> [walk].
 
 intrans_verb(inventory) --> [inventory].
 intrans_verb(look) --> [look].
-intrans_verb(quit) --> [exit].
-intrans_verb(quit) --> [quit].
-intrans_verb(quit) --> [bye].
+intrans_verb(quit) --> { synonym_of([202680814, 106629610], Quit) }, Quit.
 intrans_verb(quit) --> [q].
