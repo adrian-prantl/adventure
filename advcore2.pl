@@ -516,8 +516,8 @@ trans_verb(object, turn_on) --> { synonym_of([201510399], TurnOn) }, TurnOn.
 trans_verb(object, turn_off) --> { synonym_of([201510576], TurnOff) }, TurnOff.
 trans_verb(person, talk_to) --> [talk,to].
 trans_verb(container_object, look_in) --> [look,in].
-trans_verb(object, look_at) --> { synonym_of([202130300], LookAt) }, LookAt.
-trans_verb(person, look_at) --> { synonym_of([202130300], LookAt) }, LookAt.
+trans_verb(object, look_at) --> { synonym_of([202130300,202131777], LookAt) }, LookAt.
+trans_verb(person, look_at) --> { synonym_of([202130300,202131777], LookAt) }, LookAt.
 trans_verb(openable_object, open_) --> [open].
 trans_verb(location, go) --> [go].
 trans_verb(location, go) --> [enter].

@@ -1,5 +1,6 @@
+% -*- coding: utf-8 -*-
 % Adventure HTTP Server
-% (C) 2010 Adrian Prantl
+% (C) 2010-2011 Adrian Prantl
 
 % Quit on compile-time error
 user:message_hook(_Term, error, Lines) :- 
@@ -55,7 +56,7 @@ server(Port) :-
 % ----------------------------------------------------------------------
 
 welcome(_Request) :-
-  Title = 'New! Adventure',
+  Title = '¡New! Adventure',
   History = 'Welcome!',
 
   % Clear state
@@ -78,10 +79,40 @@ welcome(_Request) :-
 		   \html_requires(css('adventure.css'))
 		  ],
 		  [ h1(Title),
+		    h3('About'),
+		    p(['What you are looking at is a web interface to a text adventure engine I am developing. This has been my weekend project since one saturday afternoon in February 2007, when I decided to re-learn Prolog. The engine adds a feature I was missing most in the text adventure games I played in my teenager years: ', em(autocompletion), ' and ', em(synonyms), '.']),
+		    p(['I remember it being most frustrating to know what you want to achieve, but having no idea whatsoever what a particular item or action was called by the developer of the game. My engine tries to minimize these problems.']),
+		    p(small('Copyright (C) Adrian Prantl 2007–2011.')),
+		     h4('References'),
+		     p('These are some of the sources that a drew my inspirations from:'),
+		     small([
+		     p([a('href="http://nickm.com/twisty/"',
+			   'Twisty Little Passages: An Approach to Interactive Fiction'),
+			', Nick Montfort, The MIT Press, 2003.']),
+		    p([a('href="http://www.getlamp.com/"',
+			   'Get Lamp: a documentary about adventures in text'),
+			', Jason Scott, DVD, 2010.']),
+		    p([a('href="http://www-cs-faculty.stanford.edu/~uno/programs/advent.w.gz"',
+		      'ADVENT'),
+			', Donald R. Woods and Donald E. Knuth, Literate Program, Stanford University, 1998.']),
+		    p([a('href="http://dx.doi.org/10.1023/B:JLLI.0000024734.80591.30"',
+			   'Put My Galakmid Coin into the Dispenser and Kick It: Computational Linguistics and Theorem Proving in a Computer Game'),
+			', Alexander Koller, Ralph Debusmann, Malte Gabsdil und Kristina Striegnitz, Journal of Logic, Language and Information, Volume 13, Number 2, Kluwer 2004.']),
+		    p([a('href="http://www.amzi.com/AdventureInProlog/"',
+			   'Adventure in Prolog'),
+			', Amzi! inc., 1990.']),
+		    p([a('href="http://lisperati.com/casting.html"',
+			   'Casting SPELs in LISP: a comic book'),
+			', Conrad Barski, Lisperati, 2006?.']),
+		    p([a('href="http://wordnet.princeton.edu/"',
+			   'WordNet: An Electronic Lexical Database'),
+			', Princeton University, 2007.']),
+                    h3('The Demo Room'),
+					     
 		    p(form('action="run" method="post"',
 			   [
 			    input('type="hidden" name="line" value="look"'),
-			    input('type="submit" value="Start"')]))
+			    input('type="submit" value="Start the demo by clicking on this button!"')]))])
 		  ]).
 
 % ----------------------------------------------------------------------
