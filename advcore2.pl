@@ -4,6 +4,7 @@
 :- use_module(library(assoc)).
 
 :- use_module('contrib/wordnet/wn_s').
+:- discontiguous(action/1).
 
 % Quit on compile-time error
 user:message_hook(_Term, error, Lines) :-
@@ -171,8 +172,14 @@ print_line(WordsR, CsR) :-
 
 
 action(S, S1, [Action|Params]) :-
+  % this is basically a security measure, st. nobody can use something
+  % like `shell'
+  action(Action),
+
+  % call the action
   Goal =.. [Action|[S|[S1|Params]]],
   catch(Goal, E, error(Goal, E, S, S1)).
+
 error(Goal, E, S, S) :-
   writeln(E),
   Goal =.. [F|_],
@@ -331,6 +338,7 @@ container_object(S, Obj) :-
 %--------------------------------------------------------------------
 
 % look
+action(look).
 look(S, S) :-
   get_assoc(here, S, Location),
   printable(Location, L),
@@ -363,17 +371,20 @@ look_doors(Location) :-
 look_doors(_).
 
 % look at
+action(look_at).
 look_at(S, S, X) :-
   description(X, Desc),
   answer('~w~n', [Desc]),
   look_objects(S, X, X). % fixme
 
 % look in
+action(look_in).
 look_in(S, S, X) :-
   look_objects(S, X, X).
 
 % open
 %:- retractall(open(_,_,_)). % clashes with file i/o predicate otherwise
+action(open_).
 open_(S, S1, Obj) :-
   printable(Obj, ObjName),
   (  get_assoc(can_be_opened(Obj), S, true)
@@ -387,6 +398,7 @@ open_(S, S1, Obj) :-
 
 
 % go
+action(go).
 path_to(A, B, Path) :-
   path_to(A, B, [], P_rev),
   reverse(Path, P_rev).
@@ -421,6 +433,7 @@ go(S, S2, Location, Path) :- !,
   look(S1, S2).
 
 % take
+action(take).
 take(S, S1, Object) :- %trace,
   ( object(S, Object) %, Weight, inventory(S, _, Weight)
   -> ( here(S, Object)
@@ -432,9 +445,11 @@ take(S, S1, Object) :- %trace,
   ).
 
 % quit
+action(quit).
 quit(S, S) :- bye.
 
 % inventory
+action(inventory).
 inventory(S, S) :-
   answer1('You are carrying '),
   ( list_inventory(S)

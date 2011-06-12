@@ -18,6 +18,7 @@ user:message_hook(_Term, error, Lines) :-
 %:- use_module(library(http/json)).
 %:- use_module(library(http/json_convert)).
 %:- use_module(library(http/http_json)).
+:- use_module(library(http/http_log)).
 :- use_module(library(clpfd)).
 :- use_module(library(time)).
 :- use_module(nsols).
@@ -79,7 +80,7 @@ welcome(_Request) :-
 		   \html_requires(css('adventure.css'))
 		  ],
 		  [ h1(Title),
-		    h3('About'),
+		    h2('About'),
 		    p(['What you are looking at is a web interface to a text adventure engine I am developing. This has been my weekend project since one saturday afternoon in February 2007, when I decided to re-learn Prolog. The engine adds a feature I was missing most in the text adventure games I played in my teenager years: ', em(autocompletion), ' and ', em(synonyms), '.']),
 		    p(['I remember it being most frustrating to know what you want to achieve, but having no idea whatsoever what a particular item or action was called by the developer of the game. My engine tries to minimize these problems.']),
 		    p(small('Copyright (C) Adrian Prantl 2007–2011.')),
@@ -107,7 +108,7 @@ welcome(_Request) :-
 		    p([a('href="http://wordnet.princeton.edu/"',
 			   'WordNet: An Electronic Lexical Database'),
 			', Princeton University, 2007.']),
-                    h3('The Demo Room'),
+                    h2('The Demo Room'),
 					     
 		    p(form('action="run" method="post"',
 			   [
@@ -150,19 +151,18 @@ main_loop(Request) :-
       http_session_assert(history(Reply)),
       http_session_retractall(state(_)),
       http_session_assert(state(State1))
-  ;   http_session_assert(history('Sorry, I could not understand that!'))
+  ;   http_session_assert(history('Sorry, I could not understand that!')),
+      Action=[none]
   ),
   
   % Reply!
   http_current_session(SessionId, title(Title)), 
   findall(p(H), http_current_session(SessionId, history(H)), History), 
 
+  Restart = form('action="/" method="link"', [input('type="submit" value="restart"')]),
   (Action = [quit|_]
-  -> Body = [h1(Title)|History]
-  ;  append([[  form('action="/" method="link"',
-		  [input('type="submit" value="restart"')]),
-	     h1(Title)
-	  ],
+  -> append([[h1(Title)],History, [Restart]], Body)
+  ;  append([[Restart, h1(Title)],
 	  History,
 	  [
            p(form('action="run" method="post"',
