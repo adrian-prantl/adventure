@@ -275,6 +275,7 @@ noun_type(person).
 
 new_game(NewGame) :-
   list_to_assoc([here-'kitchen'], S),
+  maplist(retractall, [door, long_name, descritption, person, loaction]),
   % nouns
   declare(S,
 [
