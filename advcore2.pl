@@ -236,12 +236,12 @@ declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
   asserta(long_name(Name, LongName)),
   asserta(description(Name, Desc)).
 
-declare1(S, new_location(Room, Desc, Doors, Objects), S1) :-
+declare1(S, new_location(Room, Desc, Doors, Objects), S2) :-
   % @todo only visited locations and direct doors
   asserta(location(_,Room)),
   asserta(description(Room, Desc)),
-  maplist(new_door(Room), Doors),
-  new_objects(S, Room, Objects, S1).
+  new_xs(S, door(Room), Doors, S1),
+  new_objects(S1, Room, Objects, S2).
 declare1(S, new_person(Name, Desc), S) :-
   asserta(person(_,Name)),
   asserta(description(Name, Desc)).
@@ -254,15 +254,19 @@ wrapped(Arg, Functor, Term) :-
 declare_attr(S, Attribute, S1) :-
   put_assoc(Attribute, S, true, S1).
 
-new_door(A, B) :- asserta(door(A, B)).
 new_object(S, Room, Object, S1) :- put_assoc(inside(Object), S, Room, S1).
+
+new_xs(S, _, [], S).
+new_xs(S, Key, [X|Xs], S2) :-
+  put_assoc(Key, S, X, S1),
+  new_xs(S1, Key, Xs, S2).
 
 new_objects(S, _, [], S).
 new_objects(S, Room, [Object|Objects], S2) :-
   new_object(S, Room, Object, S1),
   new_objects(S1, Room, Objects, S2).
 
-printable([X|Xs], A) :- atomic_list_concat([X|Xs], ' ', A).
+printable([X|Xs], A) :- atomic_list_concat([X|Xs], ' ', A), !.
 printable(A, A) :- atom(A).
 
 %-----------------------------------------------
@@ -275,7 +279,7 @@ noun_type(person).
 
 new_game(NewGame) :-
   list_to_assoc([here-'kitchen'], S),
-  maplist(retractall, [door, long_name, descritption, person, loaction]),
+  maplist(retractall, [long_name, description, person, location]),
   % nouns
   declare(S,
 [
@@ -346,7 +350,7 @@ look(S, S) :-
   description(Location, Desc),
   answer('You are in the ~w.~n~w', [L, Desc]),
   look_objects(S, Location, L),
-  look_doors(Location).
+  look_doors(S, Location).
 
 % List all objects via backtracking
 look_objects(S, Location, L) :-
@@ -364,12 +368,12 @@ look_inside_objects(S, Obj) :-
      look_objects(S, Obj, O)
   ;  true).
 
-look_doors(Location) :-
-  door(Location, Room),
+look_doors(S, Location) :-
+  get_assoc(door(Location), S, Room),
   printable(Room, R),
   answer('From here you can go to the ~w.', [R]),
   fail.
-look_doors(_).
+look_doors(_, _).
 
 % look at
 action(look_at).
@@ -400,12 +404,12 @@ open_(S, S1, Obj) :-
 
 % go
 action(go).
-path_to(A, B, Path) :-
-  path_to(A, B, [], P_rev),
+path_to(S, A, B, Path) :-
+  path_to(S, A, B, [], P_rev),
   reverse(Path, P_rev).
-path_to(Here, Here, P, P).
-path_to(Here, Location, P, Path) :-
-  door(Here, There),
+path_to(_, Here, Here, P, P).
+path_to(S, Here, Location, P, Path) :-
+  get_assoc(door(Here), S, There),
   path_to(There, Location, [There|P], Path).
 
 go(S, S, Location) :-
@@ -414,7 +418,7 @@ go(S, S, Location) :-
   answer('Sorry, ~w is not a place we can go to.', [L]).
 go(S, S2, Location) :-
   ( get_assoc(here, S, Here),
-    path_to(Here, Location, Path),
+    path_to(S, Here, Location, Path),
     go(S, S2, Location, Path) )
   ; S = S2,
   printable(Location, L),
