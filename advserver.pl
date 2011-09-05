@@ -110,7 +110,7 @@ welcome(_Request) :-
 			', Princeton University, 2007.']),
                     h2('The Demo Room'),
 					     
-		    p(form('action="run" method="post"',
+		    p(form('action="adventure/run" method="post"',
 			   [
 			    input('type="hidden" name="line" value="look"'),
 			    input('type="submit" value="Start the demo by clicking on this button!"')]))])
@@ -159,13 +159,13 @@ main_loop(Request) :-
   http_current_session(SessionId, title(Title)), 
   findall(p(H), http_current_session(SessionId, history(H)), History), 
 
-  Restart = form('action="/" method="link"', [input('type="submit" value="restart"')]),
+  Restart = form('action="/adrian/adventure" method="link"', [input('type="submit" value="restart"')]),
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
   ;  append([[Restart, h1(Title)],
 	  History,
 	  [
-           p(form('action="run" method="post"',
+           p(form('action="adventure/run" method="post"',
 		  [
 		   input('type="text" id="lineinput" name="line"'),
 		   div('id="autocomplete_choices" class="autocomplete"',[]),
@@ -266,4 +266,4 @@ autocomplete1(State, Line, Completion) :-
   atomic_list_concat(CsX, ' ', Completion).
 
 :- guitracer.
-:- server(5000).
+:- server(8002).
