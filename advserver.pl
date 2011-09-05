@@ -178,7 +178,7 @@ main_loop(Request) :-
    	   script('type=text/javascript',
 		  'new Ajax.Autocompleter("lineinput",
 		                          "autocomplete_choices",
-		                          "/autocomplete",
+		                          "/adrian/adventure/autocomplete",
 		                          { method: \'get\' });
 		   lineinput.focus();
 		   bottom.scollIntoView();')
