@@ -45,8 +45,8 @@ roman.% :- write(roman).
 :- http_handler(js_script('scriptaculous.js'), http_reply_file('contrib/scriptaculous.js', []), []).
 :- http_handler(js_script('slider.js'), http_reply_file('contrib/slider.js', []), []).
 
-http:location(css, root(css), []).
-http:location(js_script, root(js_script), []).
+http:location(css, root('css'), []).
+http:location(js_script, root('js_script'), []).
 
 
 server(Port) :-
@@ -77,7 +77,8 @@ welcome(_Request) :-
   % Reply!
 %  http_redirect(moved_temporary, root(run), Request).
   reply_html_page([title(Title),
-		   \html_requires(css('adventure.css'))
+		   %\html_requires(css('adventure.css'))
+		   \html_requires('/adrian/adventure/css/adventure.css')
 		  ],
 		  [ h1(Title),
 		    h2('About'),
@@ -165,7 +166,7 @@ main_loop(Request) :-
   ;  append([[Restart, h1(Title)],
 	  History,
 	  [
-           p(form('action="adventure/run" method="post"',
+           p(form('action="run" method="post"',
 		  [
 		   input('type="text" id="lineinput" name="line"'),
 		   div('id="autocomplete_choices" class="autocomplete"',[]),
@@ -188,9 +189,9 @@ main_loop(Request) :-
 	 Body)
   ),
   reply_html_page([title(Title),
-		   \html_requires(css('adventure.css')),
-		   \html_requires(js_script('prototype.js')),
-		   \html_requires(js_script('scriptaculous.js'))
+		   \html_requires('/adrian/adventure/css/adventure.css'),
+		   \html_requires('/adrian/adventure/js_script/prototype.js'),
+		   \html_requires('/adrian/adventure/js_script/scriptaculous.js')
 		  ], Body),
 
   % End Session if user quits
