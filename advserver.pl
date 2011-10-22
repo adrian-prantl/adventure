@@ -56,29 +56,9 @@ server(Port) :-
 % Welcome page
 % ----------------------------------------------------------------------
 
-welcome(Request) :-
+welcome(_) :-
   Title = '¡New! Adventure',
   History = 'Welcome!',
-
-  % Clear state
-  http_session_assert(title(_)),
-  http_session_assert(history(_)),
-  http_session_assert(state(_)),
-  http_session_retractall(title(_)),
-  http_session_retractall(history(_)),
-  http_session_retractall(state(_)),
-
-  % Load the game definition
-  http_parameters(Request, [ game(FileName, [default('testgame')]) ]),
-  open(FileName, read, File, []),
-  read_term(File, Game),
-  close(File),
-  
-  % Launch the game
-  new_game(Game, State),
-  http_session_assert(title(Title)),
-  http_session_assert(history(History)),
-  http_session_assert(state(State)),
 
   % Reply!
 %  http_redirect(moved_temporary, root(run), Request).
@@ -119,6 +99,7 @@ welcome(Request) :-
 					     
 		    p(form('action="adventure/run" method="post"',
 			   [
+			    select('name="game"',[option('value=testgame', 'Test game')]),
 			    input('type="hidden" name="line" value="look"'),
 			    input('type="submit" value="Start the demo by clicking on this button!"')]))])
 		  ]).
@@ -126,6 +107,37 @@ welcome(Request) :-
 % ----------------------------------------------------------------------
 % Main Game Loop
 % ----------------------------------------------------------------------
+
+% this will be called from main_loop
+init(Request) :-
+  % Clear state
+  http_session_assert(title(_)),
+  http_session_assert(history(_)),
+  http_session_assert(state(_)),
+  http_session_retractall(title(_)),
+  http_session_retractall(history(_)),
+  http_session_retractall(state(_)),
+
+  % Load the game definition
+  http_parameters(Request, [ game(FileName, [default('testgame')]) ]),
+  open(FileName, read, File, []),
+  read_term(File, (Title:Game)),
+  close(File),
+  
+  % Launch the game
+  new_game(Game, State),
+  http_session_assert(title(Title)),
+  http_session_assert(history(History)),
+  http_session_assert(state(State)),
+  reply_html_page([title(Title),
+		   %\html_requires(css('adventure.css'))
+		   \html_requires('/adrian/adventure/css/adventure.css')
+		  ],
+		  [p(form('action="adventure/run" method="post"',
+			   [
+			    input('type="hidden" name="line" value="look"'),
+			    input('type="submit" value="Start!"')])),
+		   script('type=text/javascript', 'document.submit()']).
 
 line_sentence(Line, Sentence) :-
   atom_chars(Line, Chars),
@@ -145,7 +157,7 @@ tokenize([C|Cs], Seperator, RCs, Tokens) :-
 
 main_loop(Request) :-
   http_in_session(SessionId),
-
+  
   % Readline
   http_parameters(Request, [ line(Line, [default('look')]) ]),
   http_session_assert(history(['> ', span('class="reply"',Line)])),
@@ -166,7 +178,9 @@ main_loop(Request) :-
   http_current_session(SessionId, title(Title)), 
   findall(p(H), http_current_session(SessionId, history(H)), History), 
 
-  Restart = form('action="/adrian/adventure" method="link"', [input('type="submit" value="restart"')]),
+  Restart = form('action="/adrian/adventure" method="link"',
+		 [input('type="submit" value="restart"')]),
+  
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
   ;  append([[Restart, h1(Title)],

@@ -1,3 +1,5 @@
+% -*- prolog -*-
+'The test game':
 [
  new_object(light,'a clear burning flame', 'It is hot.'),
  new_object(bread,'a loaf of bread','The bread seems extremely durable.'),
