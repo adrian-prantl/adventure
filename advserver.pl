@@ -59,8 +59,6 @@ server(Port) :-
 
 welcome(_) :-
   Title = '¡New! Adventure',
-  History = 'Welcome!',
-
   % Reply!
 %  http_redirect(moved_temporary, root(run), Request).
   reply_html_page([title(Title),
@@ -110,6 +108,8 @@ welcome(_) :-
 
 % this will be called from main_loop
 init(Request) :-
+  http_open_session(_SessionID, [renew(true)]),
+  
   % Clear state
   http_session_assert(title(_)),
   http_session_assert(history(_)),
@@ -127,7 +127,7 @@ init(Request) :-
   % Launch the game
   new_game(Game, State),
   http_session_assert(title(Title)),
-  http_session_assert(history(History)),
+  http_session_assert(history('Welcome!')),
   http_session_assert(state(State)),
   reply_html_page([title(Title),
 		   %\html_requires(css('adventure.css'))
@@ -136,8 +136,8 @@ init(Request) :-
 		  [p(form('action="adventure/run" method="post"',
 			   [
 			    input('type="hidden" name="line" value="look"'),
-			    input('type="submit" value="Start!"')])),
-		   script('type=text/javascript', 'document.submit()')]).
+			    input('type="submit" value="Start!" id=go')])),
+		   script('type=text/javascript', 'document.getElementById(\'go\').submit()')]).
 
 line_sentence(Line, Sentence) :-
   atom_chars(Line, Chars),
