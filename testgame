@@ -12,4 +12,4 @@
  new_inside(stove, bread),
  new_person(gnome, 'Even for a gnome he seems unusually hairy.'),
  new_inside(inventory, lighter)
-]-kitchen
+]-kitchen.

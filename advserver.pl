@@ -120,9 +120,9 @@ init(Request) :-
   http_session_retractall(state(_)),
 
   % Load the game definition
-  http_parameters(Request, [ game(FileName, [default('testgame')]) ]),
+  http_parameters(Request, [ game(FileName, [default('testgame')]) ]), !,
   (  open(FileName, read, File, []),
-     read_term(File, (Title:Game)),
+     read_term(File, (Title:Game), [syntax_errors(fail)]),
      close(File)
   -> % Launch the game
      new_game(Game, State),
