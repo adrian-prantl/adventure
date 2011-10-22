@@ -35,6 +35,7 @@ roman.% :- write(roman).
 
 :- http_handler(root(.), welcome, []).
 :- http_handler(root(run), main_loop, []).
+:- http_handler(root(init), init, []).
 :- http_handler(root(autocomplete), autocomplete, []).
 :- http_handler(css('adventure.css'), http_reply_file('adventure.css', []), []).
 :- http_handler(js_script('builder.js'), http_reply_file('contrib/builder.js', []), []).
@@ -97,10 +98,9 @@ welcome(_) :-
 			', Princeton University, 2007.']),
                     h2('The Demo Room'),
 					     
-		    p(form('action="adventure/run" method="post"',
+		    p(form('action="adventure/init" method="post"',
 			   [
 			    select('name="game"',[option('value=testgame', 'Test game')]),
-			    input('type="hidden" name="line" value="look"'),
 			    input('type="submit" value="Start the demo by clicking on this button!"')]))])
 		  ]).
 
