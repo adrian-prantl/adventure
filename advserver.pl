@@ -108,7 +108,8 @@ welcome(_) :-
 
 % this will be called from main_loop
 init(Request) :-
-  http_open_session(_SessionID, [renew(true)]),
+  %http_open_session(_SessionID, [renew(true)]),
+  http_in_session(_SessionId),
   
   % Clear state
   http_session_assert(title(_)),
@@ -120,24 +121,27 @@ init(Request) :-
 
   % Load the game definition
   http_parameters(Request, [ game(FileName, [default('testgame')]) ]),
-  open(FileName, read, File, []),
-  read_term(File, (Title:Game)),
-  close(File),
-  
-  % Launch the game
-  new_game(Game, State),
-  http_session_assert(title(Title)),
-  http_session_assert(history('Welcome!')),
-  http_session_assert(state(State)),
-  reply_html_page([title(Title),
-		   %\html_requires(css('adventure.css'))
-		   \html_requires('/adrian/adventure/css/adventure.css')
-		  ],
-		  [p(form('action="adventure/run" method="post"',
-			   [
-			    input('type="hidden" name="line" value="look"'),
-			    input('type="submit" value="Start!" id=go')])),
-		   script('type=text/javascript', 'document.getElementById(\'go\').submit()')]).
+  (  open(FileName, read, File, []),
+     read_term(File, (Title:Game)),
+     close(File)
+  -> % Launch the game
+     new_game(Game, State),
+     http_session_assert(title(Title)),
+     http_session_assert(history('Welcome!')),
+     http_session_assert(state(State)),
+     reply_html_page([title(Title),
+		      \html_requires('/adrian/adventure/css/adventure.css')
+		     ],
+		     [p(form('action="adventure/run" method="post"',
+			     [
+			      input('type="hidden" name="line" value="look"'),
+			      input('type="submit" value="Start!" id=go')])),
+		      script('type=text/javascript', 'document.getElementById(\'go\').submit()')])
+  ; reply_html_page([title('Error'),
+		     \html_requires('/adrian/adventure/css/adventure.css')
+		    ],
+		    [p(['I\'m sorry, but I could not load the game', FileName])])
+  ).
 
 line_sentence(Line, Sentence) :-
   atom_chars(Line, Chars),
