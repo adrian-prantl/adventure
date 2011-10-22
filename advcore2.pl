@@ -1,6 +1,6 @@
 % Adventure core 2nd edition
 % (C) 2007-2010 Adrian Prantl
-:- module(advcore2, [main/0,new_game/1,action/3,sentence/4,word/2]).
+:- module(advcore2, [main/0,new_game/2,action/3,sentence/4,word/2]).
 :- use_module(library(assoc)).
 
 :- use_module('contrib/wordnet/wn_s').
@@ -277,25 +277,11 @@ noun_type(object).
 noun_type(location).
 noun_type(person).
 
-new_game(NewGame) :-
-  list_to_assoc([here-'kitchen'], S),
+new_game(GameDescription-StartLocation, NewGame) :-
+  list_to_assoc([here-StartLocation], S),
   maplist(retractall, [long_name, description, person, location]),
   % nouns
-  declare(S,
-[
- new_object(light,'a clear burning flame', 'It is hot.'),
- new_object(bread,'a loaf of bread','The bread seems extremely durable.'),
- new_object(lighter,'a lighter','A real Zippo.'),
- new_object(stove,'grandmother\'s stove.',
-	    'It is made out of shiny white emaille.', [can_be_opened]),
-
- new_location([living,room], 'A cosy living room.',[kitchen],[lighter]),
- new_location(kitchen,'The kitchen is small.',[[living,room]],[gnome,stove]),
- new_inside(stove, bread),
- new_person(gnome, 'Even for a gnome he seems unusually hairy.'),
- new_inside(inventory, lighter)
-],
-  NewGame),
+  declare(S, GameDescription, NewGame),
   % Now seal off the Prolog engine
   retractall(assert),
   retractall(asserta),
