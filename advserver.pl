@@ -132,10 +132,10 @@ init(Request) :-
      reply_html_page([title(Title),
 		      \html_requires('/adrian/adventure/css/adventure.css')
 		     ],
-		     [p(form('action="adventure/run" method="post"',
+		     [p(form('action="run" method="post" id=go',
 			     [
 			      input('type="hidden" name="line" value="look"'),
-			      input('type="submit" value="Start!" id=go')])),
+			      input('type="submit" value="Start!"')])),
 		      script('type=text/javascript', 'document.getElementById(\'go\').submit()')])
   ; reply_html_page([title('Error'),
 		     \html_requires('/adrian/adventure/css/adventure.css')
