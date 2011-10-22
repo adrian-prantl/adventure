@@ -137,7 +137,7 @@ init(Request) :-
 			   [
 			    input('type="hidden" name="line" value="look"'),
 			    input('type="submit" value="Start!"')])),
-		   script('type=text/javascript', 'document.submit()']).
+		   script('type=text/javascript', 'document.submit()')]).
 
 line_sentence(Line, Sentence) :-
   atom_chars(Line, Chars),
