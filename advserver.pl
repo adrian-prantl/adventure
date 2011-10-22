@@ -56,7 +56,7 @@ server(Port) :-
 % Welcome page
 % ----------------------------------------------------------------------
 
-welcome(_Request) :-
+welcome(Request) :-
   Title = '¡New! Adventure',
   History = 'Welcome!',
 
@@ -68,8 +68,14 @@ welcome(_Request) :-
   http_session_retractall(history(_)),
   http_session_retractall(state(_)),
 
+  % Load the game definition
+  http_parameters(Request, [ game(FileName, [default('testgame')]) ]),
+  open(FileName, read, File, []),
+  read_term(File, Game),
+  close(File),
+  
   % Launch the game
-  new_game(State),
+  new_game(Game, State),
   http_session_assert(title(Title)),
   http_session_assert(history(History)),
   http_session_assert(state(State)),
