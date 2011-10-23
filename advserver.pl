@@ -98,8 +98,8 @@ welcome(_) :-
 					     
 		    p(form('action="adventure/init" method="post"',
 			   [
-			    select('name="game"',[option('value=testgame', 'Test game')]),
-			    select('name="game"',[option('value=finaldays', 'Game B')]),
+			    select('name="game"',[option('value=testgame', 'Test game'),
+						                option('value=finaldays', 'Game B')]),
 			    input('type="submit" value="Start the demo by clicking on this button!"')]))])
 		  ]).
 
