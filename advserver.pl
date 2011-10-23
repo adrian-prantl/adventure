@@ -142,7 +142,7 @@ init(Request) :-
 			\html_requires('/adrian/adventure/css/adventure.css')
 		       ],
 		       [p(['I\'m sorry, I could load the game ', FileName,
-			   'but the definition does not make any sense'])])
+			   ', but the definition does not make any sense'])])
      )
      ; reply_html_page([title('Error'),
 		     \html_requires('/adrian/adventure/css/adventure.css')

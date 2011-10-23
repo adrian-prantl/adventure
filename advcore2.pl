@@ -236,6 +236,8 @@ declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
   asserta(long_name(Name, LongName)),
   asserta(description(Name, Desc)).
 
+declare1(S, new_location(Room, Desc, Doors), S2) :-
+  declare1(S, new_location(Room, Desc, Doors, []), S2) .
 declare1(S, new_location(Room, Desc, Doors, Objects), S2) :-
   % @todo only visited locations and direct doors
   asserta(location(_,Room)),
