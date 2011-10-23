@@ -141,7 +141,7 @@ init(Request) :-
   ; reply_html_page([title('Error'),
 		     \html_requires('/adrian/adventure/css/adventure.css')
 		    ],
-		    [p(['I\'m sorry, but I could not load the game', FileName])])
+		    [p(['I\'m sorry, but I could not load the game ', FileName])])
   ).
 
 line_sentence(Line, Sentence) :-
