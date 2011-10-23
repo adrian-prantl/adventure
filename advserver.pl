@@ -126,19 +126,25 @@ init(Request) :-
      read_term(File, (Title:Game), [syntax_errors(fail)]),
      close(File)
   -> % Launch the game
-     new_game(Game, State),
-     http_session_assert(title(Title)),
-     http_session_assert(history('Welcome!')),
-     http_session_assert(state(State)),
-     reply_html_page([title(Title),
-		      \html_requires('/adrian/adventure/css/adventure.css')
-		     ],
-		     [p(form('action="run" method="post" id=go',
-			     [
-			      input('type="hidden" name="line" value="look"'),
-			      input('type="submit" value="Start!"')])),
-		      script('type=text/javascript', 'document.getElementById(\'go\').submit()')])
-  ; reply_html_page([title('Error'),
+     (   new_game(Game, State)
+     -> http_session_assert(title(Title)),
+	 http_session_assert(history('Welcome!')),
+	 http_session_assert(state(State)),
+	 reply_html_page([title(Title),
+			  \html_requires('/adrian/adventure/css/adventure.css')
+			 ],
+			 [p(form('action="run" method="post" id=go',
+				 [
+				  input('type="hidden" name="line" value="look"'),
+				  input('type="submit" value="Start!"')])),
+			  script('type=text/javascript', 'document.getElementById(\'go\').submit()')])
+     ; reply_html_page([title('Error'),
+			\html_requires('/adrian/adventure/css/adventure.css')
+		       ],
+		       [p(['I\'m sorry, I could load the game ', FileName,
+			   'but the definition does not make any sense'])])
+     )
+     ; reply_html_page([title('Error'),
 		     \html_requires('/adrian/adventure/css/adventure.css')
 		    ],
 		    [p(['I\'m sorry, but I could not load the game ', FileName])])
