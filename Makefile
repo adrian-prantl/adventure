@@ -1,5 +1,5 @@
 BASE=$(shell swipl --dump-runtime-variables | sed 's/"/ /g' | awk '/PLBASE/ {print $$2}')
-PLFLAGS=-L$(shell dirname `find $(BASE) -name libswipl.a`) -lswipl
+PLFLAGS=-L$(shell dirname `find $(BASE) -name libpl.a`) -lpl
 
 all: embed
 

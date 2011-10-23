@@ -8,4 +8,4 @@ getch(Ch) :- get_code(Ch).
 
 :- guitracer.
 
-:- main.
+:- main(finaldays).

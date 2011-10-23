@@ -8,7 +8,7 @@ void abort_interpreter() {
   // Curses
   move(24, 1);
   clear();
-  printw("Godbye!\n");
+  printw("Goodbye!\n");
   endwin();
 }
 
@@ -93,7 +93,7 @@ main(int argc, char **argv)
 
   // Run the module
   term_t goal = PL_new_term_ref();
-  PL_chars_to_term("main", goal);
+  PL_chars_to_term("main(finaldays)", goal);
   PL_call(goal, PL_new_module(PL_new_atom("advcore2")));
   
   PL_halt(/*PL_toplevel() ?*/ 0/* : 1 */);

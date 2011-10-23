@@ -1,6 +1,6 @@
 % Adventure core 2nd edition
 % (C) 2007-2010 Adrian Prantl
-:- module(advcore2, [main/0,new_game/2,action/3,sentence/4,word/2]).
+:- module(advcore2, [main/1,new_game/2,action/3,sentence/4,word/2]).
 :- use_module(library(assoc)).
 
 :- use_module('contrib/wordnet/wn_s').
@@ -12,11 +12,15 @@ user:message_hook(_Term, error, Lines) :-
   print_message_lines(user_error, 'ERROR: ', Lines),
   halt(1).
 
-main :-
-  answer('Welcome!~n'),
-  new_game(NewGame),
-  look(NewGame,S),
-  new_command(S).
+main(Name)  :-
+  open(Name, read, File, []),
+  read_term(File, (Title:Game), [syntax_errors(fail)]),
+  close(File),
+  format('~w~n~n', [Title]),
+  answer('Welcome!~n'), !,
+  new_game(Game, State), !,
+  look(State, S1),
+  new_command(S1).
 
 bye :- cformat('~nGoodbye!~n', []).
 
@@ -391,6 +395,7 @@ open_(S, S1, Obj) :-
 
 
 % go
+% FIXME this will fail with circular room layouts
 action(go).
 path_to(S, A, B, Path) :-
   path_to(S, A, B, [], P_rev),
@@ -398,7 +403,7 @@ path_to(S, A, B, Path) :-
 path_to(_, Here, Here, P, P).
 path_to(S, Here, Location, P, Path) :-
   get_assoc(door(Here), S, There),
-  path_to(There, Location, [There|P], Path).
+  path_to(S, There, Location, [There|P], Path).
 
 go(S, S, Location) :-
   \+ location(S, Location), !,
