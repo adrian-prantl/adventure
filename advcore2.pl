@@ -253,6 +253,8 @@ declare1(S, new_person(Name, Desc), S) :-
   asserta(description(Name, Desc)).
 declare1(S, new_inside(Place, X), S1) :-
   put_assoc(inside(X), S, Place, S1).
+declare1(S, new_on(Place, X), S1) :-
+  put_assoc(on(X), S, Place, S1).
 
 wrapped(Arg, Functor, Term) :-
   Term =.. [Functor, Arg].
@@ -274,6 +276,13 @@ new_objects(S, Room, [Object|Objects], S2) :-
 
 printable([X|Xs], A) :- atomic_list_concat([X|Xs], ' ', A), !.
 printable(A, A) :- atom(A).
+
+%% delete_assoc(?Key, +Assoc, ?NewAssoc)
+% quite slow.
+delete_assoc(Key, Assoc, NewAssoc) :-
+  assoc_to_list(Assoc, List),
+  delete(List, Key-_, List2),
+  list_to_assoc(List2, NewAssoc).
 
 %-----------------------------------------------
 % BASIC GAME MECHANICS
@@ -308,6 +317,9 @@ carrying(S, Obj) :- gen_assoc(inside(Obj), S, inventory).
 %% inside_of(+State, ?Obj, ?ContainerOrRoom)
 inside_of(S, Obj, ContainerOrRoom) :- gen_assoc(inside(Obj), S, ContainerOrRoom).
 
+%% inside_of(+State, ?Obj, ?Object)
+on(S, Obj, Object) :- gen_assoc(on(Obj), S, Object).
+
 %% here(+State, ?Obj)
 % An object is here if it is in the inventory, the current room or
 % inside an open object that is here.
@@ -317,6 +329,9 @@ here(S, Obj) :-
   gen_assoc(inside(Obj), S, Container),
   gen_assoc(open(Container), S, true),
   here(S, Container).
+here(S, Obj) :- 
+  gen_assoc(on(Obj), S, Object),
+  here(S, Object).
 
 % Static grammar rules
 object(S, Obj) :- here(S, Obj).
@@ -350,6 +365,11 @@ look_objects(S, Location, L) :-
   printable(Obj, ObjName),
   answer('Inside the ~w there is a ~w.', [L, ObjName]),
   look_inside_objects(S, Obj),
+  fail.
+look_objects(S, Location, L) :-
+  on(S, Obj, Location),
+  printable(Obj, ObjName),
+  answer('On the ~w there is a ~w.', [L, ObjName]),
   fail.
 look_objects(_, _, _).
 
@@ -432,10 +452,11 @@ go(S, S2, Location, Path) :- !,
 
 % take
 action(take).
-take(S, S1, Object) :- %trace,
+take(S, S2, Object) :- %trace,
   ( object(S, Object) %, Weight, inventory(S, _, Weight)
   -> ( here(S, Object)
        -> ( put_assoc(inside(Object), S, inventory, S1),
+	      delete_assoc(on(Object), S1, S2),
 	    answer('You now have the ~w.', [Object]) )
        ; answer('There is no ~w within sight.', [Object])
      )
@@ -508,6 +529,7 @@ intrans(_) :- fail.
 
 %preposition(object,at) --> [at].
 preposition(container_object,in) --> [in].
+%preposition(object,on) --> [on].
 preposition(location,to) --> [to].
 preposition(location,to) --> [into].
 preposition(location,to) --> [inside].
