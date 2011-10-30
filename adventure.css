@@ -12,6 +12,8 @@ p {
 /*    font-size: 12pt */
 }
 
+#reply {font-style: italic; }
+
 div.autocomplete {
   position:absolute;
   width:250px;

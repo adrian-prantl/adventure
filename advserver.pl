@@ -171,15 +171,15 @@ linkified(Atom, List) :-
   atom_chars(Atom, Chars),
   linkified1(Chars, List) .
 linkified1(['~'|Chars], [Link|List]) :-
-  append([[l, o, c, a, t, i, o, n,'('], Loc, ')', Rest], Chars), !,
+  append([[l, o, c, a, t, i, o, n,'('], Loc, [')'], Rest], Chars), !,
   atom_chars(Atom, Loc),
-  format(atom(Href), 'href=javascript:document.run.submit();&line="go to the ~w"', [Atom]),
+  format(atom(Href), 'href=javascript:do(\'go to the ~w\')', [Atom]),
   Link = a(Href, Atom),
   linkified1(Rest, List).
 linkified1(['~'|Chars], [Link|List]) :-
-  append([[o,b,j,e,c,t,'('], Obj, ')', Rest], Chars), !,
+  append([[o,b,j,e,c,t,'('], Obj, [')'], Rest], Chars), !,
   atom_chars(Atom, Obj),
-  format(atom(Href), 'href=javascript:document.run.submit();&line="look at the ~w"', [Atom]),
+  format(atom(Href), 'href=javascript:do(\'look at the ~w\')', [Atom]),
   Link = a(Href, Atom),
   linkified1(Rest, List).
 linkified1(Chars, [Atom|List]) :-
@@ -219,9 +219,14 @@ main_loop(Request) :-
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
   ;  append([[Restart, h1(Title)],
+	     [script('type=text/javascript',
+'		  function do(line) {
+		      document.userinput.line.value = line;
+ 		      document.userinput.submit();
+		     }')],
 	  History,
 	  [
-           p(form('action="run" method="post"',
+           p(form('action="run" method="post" name=userinput',
 		  [
 		   input('type="text" id="lineinput" name="line"'),
 		   div('id="autocomplete_choices" class="autocomplete"',[]),
@@ -232,13 +237,12 @@ main_loop(Request) :-
 	   br(''),br(''),br(''),br(''),br('id=bottom'),
 	   % Autocompletion, focus on input field, scroll to bottom
    	   script('type=text/javascript',
-		  'new Ajax.Autocompleter("lineinput",
+'		   new Ajax.Autocompleter("lineinput",
 		                          "autocomplete_choices",
 		                          "/adrian/adventure/autocomplete",
 		                          { method: \'get\' });
 		   lineinput.focus();
-		   bottom.scollIntoView();')
-
+		   bottom.scrollIntoView(); ')
 	  ]
 	 ],
 	 Body)

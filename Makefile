@@ -13,7 +13,7 @@ run: embed
 	./embed
 
 www:
-	open http://localhost:5000 && swipl -f advserver.pl
+	open http://localhost:8002 && swipl -f advserver.pl
 
 embed: embed.c
 	gcc $(PLFLAGS) -I$(BASE)/include -o embed embed.c -lcurses
