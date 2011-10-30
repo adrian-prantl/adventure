@@ -355,7 +355,7 @@ look(S, S) :-
   get_assoc(here, S, Location),
   printable(Location, L),
   description(Location, Desc),
-  answer('You are in the location(~w).~n~w', [L, Desc]),
+  answer('You are in the ~~location(~w).~n~w', [L, Desc]),
   look_objects(S, Location, L),
   look_doors(S, Location).
 
@@ -363,7 +363,7 @@ look(S, S) :-
 look_objects(S, Location, L) :-
   inside_of(S, Obj, Location),
   printable(Obj, ObjName),
-  answer('Inside the ~w there is a object(~w).', [L, ObjName]),
+  answer('Inside the ~w there is a ~~object(~w).', [L, ObjName]),
   look_inside_objects(S, Obj),
   fail.
 look_objects(S, Location, L) :-

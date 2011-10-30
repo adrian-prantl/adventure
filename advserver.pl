@@ -170,22 +170,22 @@ tokenize([C|Cs], Seperator, RCs, Tokens) :-
 linkified(Atom, List) :-
   atom_chars(Atom, Chars),
   linkified1(Chars, List) .
-linkified1(['%'|Chars], [Link|List]) :-
+linkified1(['~'|Chars], [Link|List]) :-
   append([[l, o, c, a, t, i, o, n,'('], Loc, ')', Rest], Chars), !,
   atom_chars(Atom, Loc),
   format(atom(Href), 'href=javascript:document.run.submit();&line="go to the ~w"', [Atom]),
   Link = a(Href, Atom),
   linkified1(Rest, List).
-linkified1(['%'|Chars], [Link|List]) :-
+linkified1(['~'|Chars], [Link|List]) :-
   append([[o,b,j,e,c,t,'('], Obj, ')', Rest], Chars), !,
   atom_chars(Atom, Obj),
   format(atom(Href), 'href=javascript:document.run.submit();&line="look at the ~w"', [Atom]),
   Link = a(Href, Atom),
   linkified1(Rest, List).
 linkified1(Chars, [Atom|List]) :-
-  append([Cs, ['%'], Rest], Chars), !,
+  append([Cs, ['~'], Rest], Chars), !,
   atom_chars(Atom, Cs),
-  linkified1(['%'|Rest], List).
+  linkified1(['~'|Rest], List).
 linkified1(Chars, [Atom]) :-
   atom_chars(Atom, Chars).
 
