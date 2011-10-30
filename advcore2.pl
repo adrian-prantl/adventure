@@ -274,6 +274,10 @@ new_objects(S, Room, [Object|Objects], S2) :-
   new_object(S, Room, Object, S1),
   new_objects(S1, Room, Objects, S2).
 
+linkified(Atom, Link) :-
+  format(atom(Href), 'href=javascript:document.run.submit();&line="look ~w"', [Atom]),
+  Link = a(Href, Atom).
+
 printable([X|Xs], A) :- atomic_list_concat([X|Xs], ' ', A), !.
 printable(A, A) :- atom(A).
 
@@ -354,8 +358,9 @@ action(look).
 look(S, S) :-
   get_assoc(here, S, Location),
   printable(Location, L),
+  linkified(L, L1),
   description(Location, Desc),
-  answer('You are in the ~w.~n~w', [L, Desc]),
+  answer('You are in the ~w.~n~w', [L1, Desc]),
   look_objects(S, Location, L),
   look_doors(S, Location).
 
