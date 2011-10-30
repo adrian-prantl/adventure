@@ -166,6 +166,26 @@ tokenize([], _, RCs, [Token]) :-
 tokenize([C|Cs], Seperator, RCs, Tokens) :-
   tokenize(Cs, Seperator, [C|RCs], Tokens).
 
+linkified(Atom, List) :-
+  atom_chars(Atom, Chars),
+  linkified1(Chars, List) .
+linkified(['%'|Chars], [Link|List]) :-
+  append([[l, o, c, a, t, i, o, n,'('], Loc, ')', Rest], Chars), !,
+  atom_chars(Atom, Loc),
+  format(atom(Href), 'href=javascript:document.run.submit();&line="go to the ~w"', [Atom]),
+  Link = a(Href, Atom),
+  linkified(Rest, List).
+linkified(['%'|Chars], [Link|List]) :-
+  append([[o,b,j,e,c,t,'('], Obj, ')', Rest], Chars), !,
+  atom_chars(Atom, Obj),
+  format(atom(Href), 'href=javascript:document.run.submit();&line="look at the ~w"', [Atom]),
+  Link = a(Href, Atom),
+  linkified(Rest, List).
+linkified(Chars, [Atom|List]) :-
+  append([Cs, ['%'], Rest], Chars), !,
+  atom_chars(Atom, Cs),
+  linkified(['%'|Rest], List).
+
 main_loop(Request) :-
   http_in_session(SessionId),
   
@@ -187,7 +207,8 @@ main_loop(Request) :-
   
   % Reply!
   http_current_session(SessionId, title(Title)), 
-  findall(p(H), http_current_session(SessionId, history(H)), History), 
+  findall(p(H), http_current_session(SessionId, history(H)), History),
+  linkified(History, History1),
 
   Restart = form('action="/adrian/adventure" method="link"',
 		 [input('type="submit" value="restart"')]),
@@ -195,7 +216,7 @@ main_loop(Request) :-
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
   ;  append([[Restart, h1(Title)],
-	  History,
+	  History1,
 	  [
            p(form('action="run" method="post"',
 		  [
