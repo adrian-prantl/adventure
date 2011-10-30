@@ -166,25 +166,28 @@ tokenize([], _, RCs, [Token]) :-
 tokenize([C|Cs], Seperator, RCs, Tokens) :-
   tokenize(Cs, Seperator, [C|RCs], Tokens).
 
+% Linkify some specially marked-up tokens
 linkified(Atom, List) :-
   atom_chars(Atom, Chars),
   linkified1(Chars, List) .
-linkified(['%'|Chars], [Link|List]) :-
+linkified1(['%'|Chars], [Link|List]) :-
   append([[l, o, c, a, t, i, o, n,'('], Loc, ')', Rest], Chars), !,
   atom_chars(Atom, Loc),
   format(atom(Href), 'href=javascript:document.run.submit();&line="go to the ~w"', [Atom]),
   Link = a(Href, Atom),
-  linkified(Rest, List).
-linkified(['%'|Chars], [Link|List]) :-
+  linkified1(Rest, List).
+linkified1(['%'|Chars], [Link|List]) :-
   append([[o,b,j,e,c,t,'('], Obj, ')', Rest], Chars), !,
   atom_chars(Atom, Obj),
   format(atom(Href), 'href=javascript:document.run.submit();&line="look at the ~w"', [Atom]),
   Link = a(Href, Atom),
-  linkified(Rest, List).
-linkified(Chars, [Atom|List]) :-
+  linkified1(Rest, List).
+linkified1(Chars, [Atom|List]) :-
   append([Cs, ['%'], Rest], Chars), !,
   atom_chars(Atom, Cs),
-  linkified(['%'|Rest], List).
+  linkified1(['%'|Rest], List).
+linkified1(Chars, [Atom]) :-
+  atom_chars(Atom, Chars).
 
 main_loop(Request) :-
   http_in_session(SessionId),
