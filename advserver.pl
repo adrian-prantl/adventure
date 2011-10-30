@@ -198,7 +198,8 @@ main_loop(Request) :-
   line_sentence(Line, Sentence),
   (   phrase(sentence(Action, State), Sentence)
   ->  with_output_to(atom(Reply), action(State, State1, Action)),
-      http_session_assert(history(Reply)),
+      linkified(Reply, ReplyL),
+      http_session_assert(history(ReplyL)),
       http_session_retractall(state(_)),
       http_session_assert(state(State1))
   ;   http_session_assert(history('Sorry, I could not understand that!')),
@@ -208,7 +209,6 @@ main_loop(Request) :-
   % Reply!
   http_current_session(SessionId, title(Title)), 
   findall(p(H), http_current_session(SessionId, history(H)), History),
-  linkified(History, History1),
 
   Restart = form('action="/adrian/adventure" method="link"',
 		 [input('type="submit" value="restart"')]),
@@ -216,7 +216,7 @@ main_loop(Request) :-
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
   ;  append([[Restart, h1(Title)],
-	  History1,
+	  History,
 	  [
            p(form('action="run" method="post"',
 		  [
