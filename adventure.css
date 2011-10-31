@@ -13,6 +13,7 @@ p {
 }
 
 #reply {font-style: italic; }
+a { color:black; }
 
 div.autocomplete {
   position:absolute;
