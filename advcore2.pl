@@ -362,6 +362,10 @@ look(S, S) :-
 % List all objects via backtracking
 look_objects(S, Location, L) :-
   inside_of(S, Obj, Location),
+  % if it can be opened, it must be open
+  (get_assoc(can_be_opened(Location), S, true)
+  ->  get_assoc(open(Location), S, true)
+  ; true),
   printable(Obj, ObjName),
   answer('Inside the ~w there is a ~~object(~w).', [L, ObjName]),
   look_inside_objects(S, Obj),
@@ -407,10 +411,10 @@ open_(S, S1, Obj) :-
   (  get_assoc(can_be_opened(Obj), S, true)
   ->
      put_assoc(open(Obj), S, true, S1),
-     look_objects(S1, Obj, ObjName),
-     answer('Behold, the ~w is now open.~n', [ObjName])
+     answer('Behold, the ~w is now open.~n', [ObjName]),
+     look_objects(S1, Obj, ObjName)
   ;
-     answer('You cannot open ~w!~n', [ObjName])
+     answer('You cannot open the ~w!~n', [ObjName])
   ).
 
 
@@ -453,7 +457,7 @@ go(S, S2, Location, Path) :- !,
 % take
 action(take).
 take(S, S2, Object) :- %trace,
-  ( object(S, Object) %, Weight, inventory(S, _, Weight)
+  ( object(S, Object) % Weight, inventory(S, _, Weight)
   -> ( here(S, Object)
        -> ( put_assoc(inside(Object), S, inventory, S1),
 	      delete_assoc(on(Object), S1, S2),

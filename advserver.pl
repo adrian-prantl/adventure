@@ -194,7 +194,7 @@ main_loop(Request) :-
   
   % Readline
   http_parameters(Request, [ line(Line, [default('look')]) ]),
-  http_session_assert(history(['> ', span('class="reply"',Line)])),
+  http_session_assert(history(['> ', span('class="command"',Line)])),
 
   % Run the engine
   http_current_session(SessionId, state(State)),
@@ -211,7 +211,7 @@ main_loop(Request) :-
   
   % Reply!
   http_current_session(SessionId, title(Title)), 
-  findall(p(H), http_current_session(SessionId, history(H)), History),
+  findall(p('class="reply"', H), http_current_session(SessionId, history(H)), History),
 
   Restart = form('action="/adrian/adventure" method="link"',
 		 [input('type="submit" value="restart"')]),
@@ -219,11 +219,6 @@ main_loop(Request) :-
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
   ;  append([[Restart, h1(Title)],
-	     [script('type=text/javascript',
-'		  function do(line) {
-		      document.userinput.line.value = line;
- 		      document.userinput.submit();
-		     }')],
 	  History,
 	  [
            p(form('action="run" method="post" name=userinput',
