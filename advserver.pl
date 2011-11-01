@@ -173,13 +173,13 @@ linkified(Atom, List) :-
 linkified1(['~'|Chars], [Link|List]) :-
   append([[l, o, c, a, t, i, o, n,'('], Loc, [')'], Rest], Chars), !,
   atom_chars(Atom, Loc),
-  format(atom(Href), 'href="run?go to the ~w")', [Atom]),
+  format(atom(Href), 'href="run?go to the ~w" class="command")', [Atom]),
   Link = a(Href, Atom),
   linkified1(Rest, List).
 linkified1(['~'|Chars], [Link|List]) :-
   append([[o,b,j,e,c,t,'('], Obj, [')'], Rest], Chars), !,
   atom_chars(Atom, Obj),
-  format(atom(Href), 'href="run?line=look at the ~w"', [Atom]),
+  format(atom(Href), 'href="run?line=look at the ~w" class="command"', [Atom]),
   Link = a(Href, Atom),
   linkified1(Rest, List).
 linkified1(Chars, [Atom|List]) :-
