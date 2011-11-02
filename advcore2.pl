@@ -365,8 +365,8 @@ look_objects(S, Location, L) :-
   printable(Obj, ObjName),
   % if it can be opened, it must be open
   (openable_object(S, Location)
-  ->  (get_assoc(open(Location), S, true) ; answer('The ~w is closed shut.', [Location]), fail)
-  ; true), !,
+  ->  (get_assoc(open(Location), S, true) -> true ;  answer('The ~w is closed shut.', [ObjName]), fail)
+  ; true),
   answer('Inside the ~w there is a ~~object(~w).', [L, ObjName]),
   look_inside_objects(S, Obj),
   fail.
