@@ -193,7 +193,8 @@ main_loop(Request) :-
   http_in_session(SessionId),
   
   % Readline
-  http_parameters(Request, [ line(Line, [default('look')]) ]),
+  http_parameters(Request, [ line(LineMixed, [default('look')]) ]),
+  downcase_atom(LineMixed, Line),
   http_session_assert(history(['> ', span('class="command"',Line)])),
 
   % Run the engine
@@ -277,10 +278,11 @@ autocomplete(Request) :-
   http_parameters(Request, [ line(Line, [default('')]) ]),
   http_in_session(SessionId),
   http_current_session(SessionId, state(State)),
+  downcase_atom(Line, LineLow)
 %  (Line='look a' -> gtrace ; true),
   catch(call_with_time_limit(2, findnsols(5,
 					  li(C),
-					  autocomplete1(State, Line, C),
+					  autocomplete1(State, LineLow, C),
 					  Completions,
 					  [])),
 	time_limit_exceeded,
