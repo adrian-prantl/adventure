@@ -278,7 +278,7 @@ autocomplete(Request) :-
   http_parameters(Request, [ line(Line, [default('')]) ]),
   http_in_session(SessionId),
   http_current_session(SessionId, state(State)),
-  downcase_atom(Line, LineLow)
+  downcase_atom(Line, LineLow),
 %  (Line='look a' -> gtrace ; true),
   catch(call_with_time_limit(2, findnsols(5,
 					  li(C),
