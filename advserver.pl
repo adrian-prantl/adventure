@@ -8,6 +8,9 @@ user:message_hook(_Term, error, Lines) :-
   print_message_lines(user_error, 'ERROR: ', Lines),
   halt(1).
 
+%base_path('/').
+base_path('/adrian/adventure/').
+
 :- use_module(library(apply_macros)).
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
@@ -61,9 +64,12 @@ welcome(_) :-
   Title = '¡New! Adventure',
   % Reply!
 %  http_redirect(moved_temporary, root(run), Request).
+  base_path(Base),
+  atom_concat(Base, 'css/adventure.css', CSS),
+  format(atom(Init), 'action="~winit" method="post"', [Base]),
   reply_html_page([title(Title),
 		   %\html_requires(css('adventure.css'))
-		   \html_requires('/adrian/adventure/css/adventure.css')
+		   \html_requires(CSS)
 		  ],
 		  [ h1(Title),
 		    h2('About'),
@@ -96,7 +102,7 @@ welcome(_) :-
 			', Princeton University, 2007.']),
                     h2('The Demo Room'),
 					     
-		    p(form('action="adventure/init" method="post"',
+		    p(form(Init,
 			   [
 			    select('name="game"',[option('value=testgame', 'Test game'),
 						                option('value=finaldays', 'Game B')]),
@@ -120,6 +126,8 @@ init(Request) :-
   http_session_retractall(history(_)),
   http_session_retractall(state(_)),
 
+  base_path(Base),
+  
   % Load the game definition
   http_parameters(Request, [ game(FileName, [default('testgame')]) ]), !,
   (  open(FileName, read, File, []),
@@ -127,11 +135,12 @@ init(Request) :-
      close(File)
   -> % Launch the game
      (   new_game(Game, State)
-     -> http_session_assert(title(Title)),
+     ->  http_session_assert(title(Title)),
 	 http_session_assert(history('Welcome!')),
 	 http_session_assert(state(State)),
+	 atom_concat(Base, 'css/adventure.css', CSS),
 	 reply_html_page([title(Title),
-			  \html_requires('/adrian/adventure/css/adventure.css')
+			  \html_requires(CSS)
 			 ],
 			 [p(form('action="run" method="post" id=go',
 				 [
@@ -139,13 +148,13 @@ init(Request) :-
 				  input('type="submit" value="Start!"')])),
 			  script('type=text/javascript', 'document.getElementById(\'go\').submit()')])
      ; reply_html_page([title('Error'),
-			\html_requires('/adrian/adventure/css/adventure.css')
+			\html_requires(CSS)
 		       ],
 		       [p(['I\'m sorry, I could load the game ', FileName,
 			   ', but the definition does not make any sense'])])
      )
      ; reply_html_page([title('Error'),
-		     \html_requires('/adrian/adventure/css/adventure.css')
+		     \html_requires(CSS)
 		    ],
 		    [p(['I\'m sorry, but I could not load the game ', FileName])])
   ).
@@ -214,8 +223,18 @@ main_loop(Request) :-
   http_current_session(SessionId, title(Title)), 
   findall(p('class="reply"', H), http_current_session(SessionId, history(H)), History),
 
-  Restart = form('action="/adrian/adventure" method="link"',
-		 [input('type="submit" value="restart"')]),
+  base_path(Base),
+  format(atom(Form), 'action="~w" method="link"', [Base]),
+  Restart = form(Form, [input('type="submit" value="restart"')]),
+  format(atom(Autocompleter), 
+	 '  new Ajax.Autocompleter("lineinput",
+	                           "autocomplete_choices",
+		                   "~wautocomplete",
+		                   { method: \'get\' });
+            lineinput.focus();
+            bottom.scrollIntoView(); ',
+	[Base]),
+
   
   (Action = [quit|_]
   -> append([[h1(Title)],History, [Restart]], Body)
@@ -232,21 +251,18 @@ main_loop(Request) :-
 	   br(''),br(''),br(''),br(''),
 	   br(''),br(''),br(''),br(''),br('id=bottom'),
 	   % Autocompletion, focus on input field, scroll to bottom
-   	   script('type=text/javascript',
-'		   new Ajax.Autocompleter("lineinput",
-		                          "autocomplete_choices",
-		                          "/adrian/adventure/autocomplete",
-		                          { method: \'get\' });
-		   lineinput.focus();
-		   bottom.scrollIntoView(); ')
+	   script('type=text/javascript', Autocompleter)
 	  ]
 	 ],
 	 Body)
   ),
+  atom_concat(Base, 'css/adventure.css', CSS),
+  atom_concat(Base, 'js_script/prototype.js', Prototype),
+  atom_concat(Base, 'js_script/scriptaculous.js', Scriptaculous),
   reply_html_page([title(Title),
-		   \html_requires('/adrian/adventure/css/adventure.css'),
-		   \html_requires('/adrian/adventure/js_script/prototype.js'),
-		   \html_requires('/adrian/adventure/js_script/scriptaculous.js')
+		   \html_requires(CSS),
+		   \html_requires(Prototype),
+		   \html_requires(Scriptaculous)
 		  ], Body),
 
   % End Session if user quits
