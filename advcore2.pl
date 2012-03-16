@@ -361,11 +361,15 @@ look(S, S) :-
 
 % List all objects via backtracking
 look_objects(S, Location, L) :-
+  % for each Obj at Location
   inside_of(S, Obj, Location),
   printable(Obj, ObjName),
-  % if it can be opened, it must be open
+  % if it can be opened, it must be open to continue
   (openable_object(S, Location)
-  ->  (get_assoc(open(Location), S, true) -> true ;  answer('The ~w is closed shut.', [ObjName]), fail)
+  ->  (get_assoc(open(Location), S, true)
+      -> true
+      ;  answer('The ~w is closed shut.', [Location]),
+         fail)
   ; true),
   answer('Inside the ~w there is a ~~object(~w).', [L, ObjName]),
   look_inside_objects(S, Obj),
@@ -484,9 +488,9 @@ list_inventory(S) :-
   carrying(S, Obj),
   printable(Obj, ObjName),
   (  First = counter(0)
-  -> answer1(ObjName),
+  -> answer1('a ~w', ObjName),
      nb_setarg(1, First, 1)
-  ;  answer1(', ~w', [ObjName])
+  ;  answer1(', a ~w', [ObjName])
   ),
   fail.
 list_inventory(_) :- answer('.').

@@ -75,7 +75,7 @@ welcome(_) :-
 		    h2('About'),
 		    p(['What you are looking at is a web interface to a text adventure engine I am developing. This has been my weekend project since one saturday afternoon in February 2007, when I decided to re-learn Prolog. The engine adds a feature I was missing most in the text adventure games I played in my teenager years: ', em(autocompletion), ' and ', em(synonyms), '.']),
 		    p(['I remember it being most frustrating to know what you want to achieve, but having no idea whatsoever what a particular item or action was called by the developer of the game. My engine tries to minimize these problems.']),
-		    p(small('Copyright (C) Adrian Prantl 2007–2011.')),
+		    p(small('Copyright (C) Adrian Prantl 2007–2012.')),
 		     h4('References'),
 		     p('These are some of the sources that a drew my inspirations from:'),
 		     small([
