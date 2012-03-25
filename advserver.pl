@@ -1,6 +1,6 @@
 % -*- coding: utf-8 -*-
 % Adventure HTTP Server
-% (C) 2010-2011 Adrian Prantl
+% (C) 2010-2012 Adrian Prantl
 
 % Quit on compile-time error
 user:message_hook(_Term, error, Lines) :- 
@@ -8,8 +8,11 @@ user:message_hook(_Term, error, Lines) :-
   print_message_lines(user_error, 'ERROR: ', Lines),
   halt(1).
 
-%base_path('/').
-base_path('/adrian/adventure/').
+% get the base path of the server from the last command line argument if present
+:- ((current_prolog_flag(argv, Argv),
+     append(_, [BasePath], Argv),
+     asserta(base_path(BasePath)))
+   ; base_path('/') ).
 
 :- use_module(library(apply_macros)).
 :- use_module(library(http/thread_httpd)).
@@ -182,14 +185,16 @@ linkified(Atom, List) :-
 linkified1(['~'|Chars], [Link|List]) :-
   append([[l, o, c, a, t, i, o, n,'('], Loc, [')'], Rest], Chars), !,
   atom_chars(Atom, Loc),
-  format(atom(Href), 'href="run?go to the ~w" class="reply")', [Atom]),
-  Link = a(Href, Atom),
+  format(atom(Href), 'href="run?line=go to the ~w" class="reply")', [Atom]),
+  format(atom(Tooltip), 'go to the ~w', [Atom]),
+  Link = span('class="reply"', a(Href, [Atom, span(Tooltip)])),
   linkified1(Rest, List).
 linkified1(['~'|Chars], [Link|List]) :-
   append([[o,b,j,e,c,t,'('], Obj, [')'], Rest], Chars), !,
   atom_chars(Atom, Obj),
   format(atom(Href), 'href="run?line=look at the ~w" class="reply"', [Atom]),
-  Link = a(Href, Atom),
+  format(atom(Tooltip), 'look at the ~w', [Atom]),
+  Link = span('class="reply"', a(Href, [Atom, span(Tooltip)])),
   linkified1(Rest, List).
 linkified1(Chars, [Atom|List]) :-
   append([Cs, ['~'], Rest], Chars), !,

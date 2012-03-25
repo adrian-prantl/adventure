@@ -37,3 +37,19 @@ div.autocomplete ul li {
   height:32px;
   cursor:pointer;
 }
+
+a.reply span {
+  display: none;
+  text-decoration:none;
+  position: absolute; 
+}
+
+a.reply:hover span { 
+    display: block; 
+    position: absolute; 
+    padding: 2mm; 
+    z-index: 100;
+    font-size: 80%;
+    background:#ffe;
+    border: 1px solid black;
+}
