@@ -1,6 +1,28 @@
 % -*- coding: utf-8 -*-
 % Adventure HTTP Server
+%
+% This file implements a web interface to the Adventure system. Key
+% features include command autocompletion via an AJAX-style popup box.
+%
+% To execute it use the run.sh script.
+%
 % (C) 2010-2012 Adrian Prantl
+% This file is part of Adventure.
+%
+% Adventure is free software: you can redistribute it and/or modify
+% it under the terms of the GNU Affero General Public License as
+% published by the Free Software Foundation, either version 3 of the
+% License, or (at your option) any later version.
+%
+% Adventure is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU Affero General Public License for more details.
+%
+% You should have received a copy of the GNU Affero General Public
+% License along with Adventure.  If not, see
+% <http://www.gnu.org/licenses/>.
+%
 
 % Quit on compile-time error
 user:message_hook(_Term, error, Lines) :- 

@@ -1,0 +1,109 @@
+README                                       -*- rst; coding: utf-8 -*-
+
+Introduction
+------------
+
+ċWhat you are looking at is a web interface to a text adventure engine
+I am developing. This has been my weekend project since one saturday
+afternoon in February 2007, when I decided to re-learn Prolog. The
+engine adds a feature I was missing most in the text adventure games I
+played when I was a kid: *autocompletion* and *synonyms*.
+
+I remember it being most frustrating to know what you want to achieve,
+but having no idea whatsoever what a particular item or action was
+called by the developer of the game. My engine tries to minimize these
+problems.
+
+References
+----------
+	
+These are some of the sources that a drew my inspirations from:
+Twisty Little Passages: An Approach to Interactive Fiction
+<http://nickm.com/twisty/>
+Nick Montfort, The MIT Press, 2003.
+
+Get Lamp: a documentary about adventures in text
+<http://www.getlamp.com/>
+Jason Scott, DVD, 2010.
+
+ADVENT
+<http://www-cs-faculty.stanford.edu/~uno/programs/advent.w.gz>
+Donald R. Woods and Donald E. Knuth,
+Literate Program, Stanford University, 1998.
+
+Put My Galakmid Coin into the Dispenser and Kick It:
+Computational Linguistics and Theorem Proving in a Computer Game
+<http://dx.doi.org/10.1023/B:JLLI.0000024734.80591.30>
+Alexander Koller, Ralph Debusmann, Malte Gabsdil und Kristina Striegnitz, 
+Journal of Logic, Language and Information, Volume 13, Number 2, Kluwer 2004.
+
+Adventure in Prolog
+<http://www.amzi.com/AdventureInProlog/>
+Amzi! inc., 1990.
+
+Casting SPELs in LISP: a comic book
+<http://lisperati.com/casting.html>
+Conrad Barski, Lisperati, 2006?.
+
+WordNet: An Electronic Lexical Database
+<http://wordnet.princeton.edu/>
+Princeton University, 2007.
+
+Discussion on Slashdot that possibly sparked the idea: 
+http://games.slashdot.org/story/04/02/26/2334203/magic-words---interactive-fiction-in-the-21st-century
+
+Copyright and Licensing
+-----------------------
+see also LICENSE.
+
+Copyright © 2007-2012 Adrian Prantl
+This file is part of Adventure.
+
+Adventure is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+Adventure is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public
+License along with Adventure.  If not, see
+<http://www.gnu.org/licenses/>.
+
+Bundled 3rd-Party Software
+--------------------------
+
+For convenience, there are some 3rd-party packages bundled with
+Adventure in the contrib/ subdirectory. They come with their own
+licensing terms:
+ * Scriptaculous: MIT License
+ * WordNet
+    
+   This software and database is being provided to you, the LICENSEE,
+   by Princeton University under the following license. By obtaining,
+   using and/or copying this software and database, you agree that you
+   have read, understood, and will comply with these terms and
+   conditions.: Permission to use, copy, modify and distribute this
+   software and database and its documentation for any purpose and
+   without fee or royalty is hereby granted, provided that you agree
+   to comply with the following copyright notice and statements,
+   including the disclaimer, and that the same appear on ALL copies of
+   the software, database and documentation, including modifications
+   that you make for internal use or for distribution.
+    
+   WordNet 3.0 Copyright 2006 by Princeton University. All rights
+   reserved. THIS SOFTWARE AND DATABASE IS PROVIDED "AS IS" AND
+   PRINCETON UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES,
+   EXPRESS OR IMPLIED. BY WAY OF EXAMPLE, BUT NOT LIMITATION,
+   PRINCETON UNIVERSITY MAKES NO REPRESENTATIONS OR WARRANTIES OF
+   MERCHANT- ABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE
+   USE OF THE LICENSED SOFTWARE, DATABASE OR DOCUMENTATION WILL NOT
+   INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER
+   RIGHTS. The name of Princeton University or Princeton may not be
+   used in advertising or publicity pertaining to distribution of the
+   software and/or database. Title to copyright in this software,
+   database and any associated documentation shall at all times remain
+   with Princeton University and LICENSEE agrees to preserve same.

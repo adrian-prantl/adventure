@@ -1,4 +1,7 @@
 #!swipl -q -t main -f
+% This is a tiny utility you can use to look up synonym definitions
+% while developing a new game.
+
 :- use_module('contrib/wordnet/wn_s').
 :- use_module('contrib/wordnet/wn_g').
 
