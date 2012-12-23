@@ -1,4 +1,4 @@
-README                                       -*- rst; coding: utf-8 -*-
+/README                                       -*- rst; coding: utf-8 -*-
 
 Introduction
 ------------
@@ -14,39 +14,80 @@ but having no idea whatsoever what a particular item or action was
 called by the developer of the game. My engine tries to minimize these
 problems.
 
+Implementation Notes
+--------------------
+
+The Adventure engine is implemented in Prolog. The language parser is
+written as a DCG (definite clause grammar) rules. Thanks to Prolog's
+unusual execution model a rule in Prolog can be executed in any
+direction. This means that once the language's grammar is specified we
+can throw a string of user input to it and it will return properly
+tokenized abstract syntax, but we can also give it an incomplete list
+of tokens and query for all valid completions that would yield a legal
+sentence. In fact, due to the way it is implemented, it will only
+return completions that make sense in the current context (eg., take⇥
+will only return objects that the avatar can actually pick up and that
+are in the current room, not any noun that would be grammatically
+correct in that position).
+To be fair, the search space for the reverse execution of the grammar
+is much larger than the one for forward execution, so there are some
+rules (cf. the definition of ``noun/2`` in ``advcore2.pl``) that are
+technically redundant, but prune the search tree during backwards
+execution, so we can generate answers fast enough.
+
+The synonym feature uses the famous Princeton WordNet database of
+synonyms for the English language, which thankfully is readily
+available as a Prolog database. One ramification of this is that the
+game programmer needs to specify the actual meaning of each word that
+is used in the game using the synonym index number. To help with this
+process there is the ``synonyms.pl`` query frontend that returns all
+known definitions of a given word. Browsing through the WordNet
+database can actually be an enlightening experience about how we as
+humans process our language.
+
+There is no game!?
+------------------
+
+Right, and I'm sorry about that. I realized that I enjoy working on
+the engine much more than working on the game, and I begin to suspect
+that there is an entirely different skill set necessary to write
+compelling games. There's the demo room, though. But you can't do much
+there. Maybe one day I can at least port somebody else's existing game
+to the new engine -- even if it is "Pick up the phone booth and die".
+
 References
 ----------
 	
 These are some of the sources that a drew my inspirations from:
 Twisty Little Passages: An Approach to Interactive Fiction
-<http://nickm.com/twisty/>
+http://nickm.com/twisty/
 Nick Montfort, The MIT Press, 2003.
 
 Get Lamp: a documentary about adventures in text
-<http://www.getlamp.com/>
+http://www.getlamp.com/
 Jason Scott, DVD, 2010.
 
 ADVENT
-<http://www-cs-faculty.stanford.edu/~uno/programs/advent.w.gz>
+http://www-cs-faculty.stanford.edu/~uno/programs/advent.w.gz>
 Donald R. Woods and Donald E. Knuth,
 Literate Program, Stanford University, 1998.
 
 Put My Galakmid Coin into the Dispenser and Kick It:
 Computational Linguistics and Theorem Proving in a Computer Game
-<http://dx.doi.org/10.1023/B:JLLI.0000024734.80591.30>
+http://dx.doi.org/10.1023/B:JLLI.0000024734.80591.30>
 Alexander Koller, Ralph Debusmann, Malte Gabsdil und Kristina Striegnitz, 
 Journal of Logic, Language and Information, Volume 13, Number 2, Kluwer 2004.
 
 Adventure in Prolog
-<http://www.amzi.com/AdventureInProlog/>
+http://www.amzi.com/AdventureInProlog/
 Amzi! inc., 1990.
 
 Casting SPELs in LISP: a comic book
-<http://lisperati.com/casting.html>
+http://lisperati.com/casting.html>
 Conrad Barski, Lisperati, 2006?.
 
 WordNet: An Electronic Lexical Database
-<http://wordnet.princeton.edu/>
+http://wordnet.princeton.edu/
 Princeton University, 2007.
 
 Discussion on Slashdot that possibly sparked the idea: 
@@ -71,7 +112,7 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public
 License along with Adventure.  If not, see
-<http://www.gnu.org/licenses/>.
+http://www.gnu.org/licenses/.
 
 Bundled 3rd-Party Software
 --------------------------
