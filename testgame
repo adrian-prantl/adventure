@@ -2,7 +2,7 @@
 'The test game':
 [
  new_object(light,'a clear burning flame', 'It is hot.'),
- new_object(bread,'a loaf of bread','The bread seems extremely durable.'),
+ new_object(bread,'a loaf of bread','The bread seems extremely durable.', [can_be_eaten]),
  new_object(lighter,'a lighter','A real Zippo.'),
  new_object(stove,'grandmother\'s stove.',
 	    'It is made out of shiny white emaille.', [can_be_opened]),

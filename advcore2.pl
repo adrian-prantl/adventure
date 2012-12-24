@@ -362,6 +362,10 @@ openable_object(S, Obj) :-
 container_object(S, Obj) :-
   object(S, Obj),
   inside_of(S, _, Obj).
+% An object that can be eaten
+edible_object(S, Obj) :-
+  object(S, Obj),
+  get_assoc(can_be_eaten(Obj), S, true).
 
 % actions
 %--------------------------------------------------------------------
@@ -498,6 +502,19 @@ inventory(S, S) :-
   answer1('You are carrying '),
   ( list_inventory(S)
   ; answer('nothing at all.')).
+
+% eat, similar to take but object is gone
+action(eat).
+eat(S, S2, Object) :-
+  ( edible_object(S, Object)
+  -> ( here(S, Object)
+       -> ( put_assoc(inside(Object), S, stomach, S1),
+	      delete_assoc(on(Object), S1, S2),
+	    answer('You ate the ~w.', [Object]) )
+       ; answer('There is no ~w within sight.', [Object])
+     )
+  ; answer('The ~w is not something you can eat.', [Object])
+  ).
 
 % List all objects via backtracking
 list_inventory(S) :-
