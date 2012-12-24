@@ -28,4 +28,4 @@ getch(Ch) :- get_code(Ch).
 
 :- guitracer.
 
-:- main(finaldays).
+:- main(testgame).
