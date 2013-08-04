@@ -357,7 +357,7 @@ autocomplete1(State, Line, Completion) :-
   %L in 0..2, % do only the first four words of a sentence (? isn't is sentences up to length 4?)
   (L=3;L=2;L=1;L=0),
   length(Rest, L),
-  append(Words, [Word|Rest], CsX),gtrace,
+  append(Words, [Word|Rest], CsX),
   %print_message_lines(user_error, CsX,[]),
   
   % and find an autocompletion
