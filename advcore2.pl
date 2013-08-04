@@ -29,6 +29,9 @@ user:message_hook(_Term, error, Lines) :-
   print_message_lines(user_error, 'ERROR: ', Lines),
   halt(1).
 
+quiet. % comment this for verbose debug output.
+quiet :- fail.
+
 main(Name)  :-
   open(Name, read, File, []),
   read_term(File, (Title:Game), [syntax_errors(fail)]),
@@ -71,7 +74,7 @@ prompt(WsR, CsR) :-
 % * CsR is the reversed list of characters in the word the user is
 %   typing at the moment.
 io_loop(S, WordsR, CsR) :-
-  format_xy('Words = ~w, Cs = ~w~n', [WordsR,CsR], 0, 23),
+  (quiet ; format_xy('Words = ~w, Cs = ~w~n', [WordsR,CsR], 0, 23)),
   autocomplete(S, WordsR, CsR),
   getch(Char), !,
   %format_xy('Char = ~c (~w)~n', [Char,Char], 64, 0),
@@ -96,8 +99,6 @@ handle_char(S, C, WsR, CsR) :- char_type(C, end_of_line),
   ; prompt(WsR, CsR),
    italic, cwrite('\nSorry, I could not understand that!\n'), roman,
    new_command(S)
-   %cwrite('>'),
-   %io_loop(WsR, CsR)
   ).
 handle_char(S, _, WsR, CsR) :- % ignore
   prompt(WsR, CsR),
@@ -193,8 +194,8 @@ print_line(WordsR, CsR) :-
 
 
 action(S, S1, [Action|Params]) :-
-  % this is basically a security measure, st. nobody can use something
-  % like `shell'
+  % This is basically a security measure, so nobody can use something
+  % like `shell'.
   action(Action),
 
   % call the action
@@ -361,7 +362,7 @@ openable_object(S, Obj) :-
 % An object that holds other objects
 container_object(S, Obj) :-
   object(S, Obj),
-  inside_of(S, _, Obj).
+  get_assoc(container(Obj), S, true).
 
 % actions
 %--------------------------------------------------------------------
@@ -408,7 +409,7 @@ look_inside_objects(S, Obj) :-
 look_doors(S, Location) :-
   get_assoc(door(Location), S, Room),
   printable(Room, R),
-  answer('From here you can go to the ~w.', [R]),
+  answer('From here you can go to the ~~location(~w).', [R]),
   fail.
 look_doors(_, _).
 
@@ -425,7 +426,7 @@ look_in(S, S, X) :-
   look_objects(S, X, X).
 
 % open
-%:- retractall(open(_,_,_)). % clashes with file i/o predicate otherwise
+% Named open_ to prevent conflict with the file i/o predicate.
 action(open_).
 open_(S, S1, Obj) :-
   printable(Obj, ObjName),
@@ -436,6 +437,19 @@ open_(S, S1, Obj) :-
      look_objects(S1, Obj, ObjName)
   ;
      answer('You cannot open the ~w!~n', [ObjName])
+  ).
+
+% close
+% Named close_ to prevent conflict with the file i/o predicate.
+action(close_).
+close_(S, S1, Obj) :-
+  printable(Obj, ObjName),
+  (  get_assoc(open(Obj), S, true)
+  ->
+     delete_assoc(open(Obj), S, S1),
+     answer('You close the ~w.~n', [ObjName])
+  ;
+     answer('You cannot close the ~w!~n', [ObjName])
   ).
 
 
@@ -488,6 +502,29 @@ take(S, S2, Object) :- %trace,
   ; answer('The ~w is not something you can take with you.', [Object])
   ).
 
+% put
+action(put).
+put(S, S1, DirectObj, IndirectObj) :-
+  carrying(S, DirectObj), !,
+  put_object(S, S1, DirectObj, IndirectObj).
+put(S, S, DirectObj, _) :-
+  answer('You do not carry a ~w.', [DirectObj]).
+
+put_object(S, S2, DirectObj, IndirectObj) :-
+  here(S, IndirectObj),
+  container_object(S, IndirectObj), !,
+  delete_assoc(inside(DirectObj), S, S1),
+  put_assoc(inside(DirectObj), S1, IndirectObj, S2),
+  answer('You place the ~w inside the ~w.', [DirectObj, IndirectObj]).
+put_object(S, S2, DirectObj, IndirectObj) :-
+  here(S, IndirectObj),
+  location(S, IndirectObj), !,
+  delete_assoc(inside(DirectObj), S, S1),
+  put_assoc(on(DirectObj), S1, IndirectObj, S2),
+  answer('You leave the ~w in the ~w.', [DirectObj, IndirectObj]).
+put_object(S, S, _, _) :-
+  answer('Sorry, but you cannot do that.').
+
 % quit
 action(quit).
 quit(S, S) :- bye.
@@ -516,10 +553,13 @@ list_inventory(_) :- answer('.').
 %-----------------------------------------------
 % GRAMMAR
 
+% The following clauses are logically redundant, but necessary for
+% pruning the search tree when traversing the grammar backwards.
 % Begin - reverse rules
 word(_,W) :- phrase(det, Ws),				   member(W, Ws).
 word(_,W) :- phrase(pers_det, Ws),			   member(W, Ws).
 word(_,W) :- phrase(trans_verb(_,_), Ws),		   member(W, Ws).
+word(_,W) :- phrase(ditrans_verb(_,_,_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(intrans_verb(_), Ws),		   member(W, Ws).
 word(_,W) :- phrase(adverb(_), Ws),			   member(W, Ws).
 word(S,W) :- noun_type(T), phrase(noun(S^T,_), Ws),        member(W, Ws).
@@ -527,25 +567,31 @@ word(_,W) :- noun_type(T), phrase(preposition(T,_), Ws), member(W, Ws).
 % End - reverse rules
 
 sentence([Verb],_) --> intrans_verb(Verb).
-sentence([Verb, Noun],S) --> trans_verb(Type, Verb), preposition(Type,_), nounphrase(S^Type, Noun).
-sentence([Verb, Noun],S) --> trans_verb(Type, Verb), nounphrase(S^Type, Noun).
+sentence([Verb, Noun1, Noun2],S) -->
+  ditrans_verb(Verb, DirectTy, IndirectTy),
+  nounphrase(S^DirectTy, Noun1),
+  preposition(IndirectTy, _),
+  nounphrase(S^IndirectTy, Noun2).
+sentence([Verb, Noun],S) --> trans_verb(Verb, Type), preposition(Type,_), nounphrase(S^Type, Noun).
+sentence([Verb, Noun],S) --> trans_verb(Verb, Type), nounphrase(S^Type, Noun).
 
 det --> [the].
 %det --> [a].
 %det --> [an].
 pers_det --> [my].
 
-nounphrase(S^Type,Noun) --> { carrying(S, Noun) }, pers_det, noun(S^Type,Noun).
-nounphrase(Type,Noun) --> det,noun(Type,Noun).
-%nounphrase(Type,Noun) --> noun(Type,Noun).
+nounphrase(S^Type, Noun) --> { carrying(S, Noun) }, pers_det, noun(S^Type, Noun).
+nounphrase(S^Type, Noun) --> det, noun(S^Type, Noun).
+%nounphrase(Type, Noun) --> noun(Type,Noun).
 
-% This is the bi-directional definition of noun/3
+% This is a bi-directional definition of noun/3.
 noun(S^Type, Noun) --> { call(Type,S,Noun), atom(Noun) }, [Noun].
 noun(S^Type, Noun) --> { call(Type,S,Noun), is_list(Noun) }, Noun.
 
-verb(Type,V) --> trans_verb(Type,V).
-verb(intrans,V) --> intrans_verb(V).
-intrans(_) :- fail.
+%verb(Type,V) --> ditrans_verb(V, _, Type).
+%verb(Type,V) --> trans_verb(V, Type).
+%verb(intrans,V) --> intrans_verb(V).
+%intrans(_) :- fail.
 
 % use key on door
 % open door
@@ -554,6 +600,7 @@ intrans(_) :- fail.
 
 %preposition(object,at) --> [at].
 preposition(container_object,in) --> [in].
+preposition(container_object,in) --> [into].
 %preposition(object,on) --> [on].
 preposition(location,to) --> [to].
 preposition(location,to) --> [into].
@@ -569,19 +616,21 @@ synonym_of(SynIds, Synonym) :-
   s(SynId, _, S, _, _, _),
   atomic_list_concat(Synonym, ' ', S).
 
-trans_verb(object, take) --> { synonym_of([202205272, 200173338], Take) }, Take.
-trans_verb(object, drop) --> [drop].
-trans_verb(object, eat) --> [eat].
-trans_verb(object, turn_on) --> { synonym_of([201510399], TurnOn) }, TurnOn.
-trans_verb(object, turn_off) --> { synonym_of([201510576], TurnOff) }, TurnOff.
-trans_verb(person, talk_to) --> [talk,to].
-trans_verb(container_object, look_in) --> [look,in].
-trans_verb(object, look_at) --> { synonym_of([202130300,202131777], LookAt) }, LookAt.
-trans_verb(person, look_at) --> { synonym_of([202130300,202131777], LookAt) }, LookAt.
-trans_verb(openable_object, open_) --> [open].
-trans_verb(location, go) --> [go].
-trans_verb(location, go) --> [enter].
-trans_verb(location, go) --> [walk].
+ditrans_verb(put, object, container_object) --> { synonym_of([201494310], Put) }, Put.
+
+trans_verb(take, object) --> { synonym_of([202205272, 200173338], Take) }, Take.
+trans_verb(eat, object) --> [eat].
+trans_verb(turn_on, object) --> { synonym_of([201510399], TurnOn) }, TurnOn.
+trans_verb(turn_off, object) --> { synonym_of([201510576], TurnOff) }, TurnOff.
+trans_verb(talk_to, person) --> [talk,to].
+trans_verb(look_in, container_object) --> [look,in].
+trans_verb(look_at, object) --> { synonym_of([202130300,202131777], LookAt) }, LookAt.
+trans_verb(look_at, person) --> { synonym_of([202130300,202131777], LookAt) }, LookAt.
+trans_verb(open_, openable_object) --> [open].
+trans_verb(close_, openable_object) --> [close].
+trans_verb(go, location) --> [go].
+trans_verb(go, location) --> [enter].
+trans_verb(go, location) --> [walk].
 
 intrans_verb(inventory) --> [inventory].
 intrans_verb(look) --> [look].

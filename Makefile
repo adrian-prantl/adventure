@@ -16,7 +16,7 @@
 # <http://www.gnu.org/licenses/>.
 #
 BASE=$(shell swipl --dump-runtime-variables | sed 's/"/ /g' | awk '/PLBASE/ {print $$2}')
-PLFLAGS=-L$(shell dirname `find $(BASE) -name libpl.a`) -lpl
+PLFLAGS=-L$(shell dirname `find $(BASE) -name libswipl.a`) -lswipl
 
 all: embed
 
@@ -29,8 +29,12 @@ debug:
 run: embed
 	./embed
 
+check:
+	@echo "Running DejaGNU testsuite..."
+	runtest testsuite.exp
+
 www:
-	open http://localhost:8002 && swipl -f advserver.pl
+	open http://localhost:8002 && sh run.sh
 
 embed: embed.c
-	gcc $(PLFLAGS) -I$(BASE)/include -o embed embed.c -lcurses
+	cc $(PLFLAGS) -I$(BASE)/include -o embed -g embed.c -lcurses

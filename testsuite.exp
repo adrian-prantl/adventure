@@ -1,0 +1,30 @@
+proc test {name regex} {
+    expect {
+	-re $regex { pass $name }
+	default { fail $name }
+    }
+}
+
+proc do_command {command result} {
+    test "prompt" ">"
+    send "$command\r"
+    test $command $result
+}
+
+# Open the debug client.
+set timeout 5
+spawn swipl -f debug.pl
+test "init" "From here you can go to the.*living room"
+do_command "go to the living room"       "cosy"
+do_command "go to the kitchen"           "From here"
+do_command "take the gnome"              "have the gnome"
+do_command "open the oven"               "is now open"
+do_command "take the bread"              "have the bread"
+do_command "look at the bread"           "durable"
+do_command "put the gnome into the oven" "You place the gnome in"
+#set timeout -1
+do_command "close the oven"              "close the oven"
+
+test "prompt" ">"
+# Shutdown.
+close

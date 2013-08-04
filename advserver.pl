@@ -337,7 +337,7 @@ autocomplete(Request) :-
   ;  reply_html_page([],ul(Completions))
   ).
 
-autocomplete1(State, Line, Completion) :- 
+autocomplete1(State, Line, Completion) :-
   line_words_cs(Line, Words, Cs),
   %trace,Words=[look,at], Cs=[],
   
@@ -357,13 +357,13 @@ autocomplete1(State, Line, Completion) :-
   %L in 0..2, % do only the first four words of a sentence (? isn't is sentences up to length 4?)
   (L=3;L=2;L=1;L=0),
   length(Rest, L),
-  append(Words, [Word|Rest], CsX),
-  print_message_lines(user_error, CsX,[]),
+  append(Words, [Word|Rest], CsX),gtrace,
+  %print_message_lines(user_error, CsX,[]),
   
   % and find an autocompletion
   phrase(sentence(_,State), CsX),
   %format(atom(A), '~w~n', CsX),
   atomic_list_concat(CsX, ' ', Completion).
 
-:- guitracer.
+:- (base_path('/') -> guitracer ; true).
 :- server(8002).

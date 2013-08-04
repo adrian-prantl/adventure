@@ -37,8 +37,8 @@ void abort_interpreter() {
 foreign_t pl_getch(term_t a0)
 {
   term_t t1 = PL_new_term_ref();
-  PL_put_integer(t1, getch());
-  PL_unify(a0, t1);
+  (void)PL_put_integer(t1, getch());
+  (void)PL_unify(a0, t1);
   PL_succeed;
 }
 
@@ -115,7 +115,7 @@ main(int argc, char **argv)
 
   // Run the module
   term_t goal = PL_new_term_ref();
-  PL_chars_to_term("main(finaldays)", goal);
+  PL_chars_to_term("main(testgame)", goal);
   PL_call(goal, PL_new_module(PL_new_atom("advcore2")));
   
   PL_halt(/*PL_toplevel() ?*/ 0/* : 1 */);
