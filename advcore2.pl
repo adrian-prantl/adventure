@@ -193,14 +193,21 @@ print_line(WordsR, CsR) :-
   cwrite(W).
 
 
-action(S, S1, [Action|Params]) :-
-  % This is basically a security measure, so nobody can use something
-  % like `shell'.
+action(S, S3, [Action|Params]) :-
+  % This is basically a security measure to prevent users from
+  % entering commands like `shell'.
   action(Action),
 
+  % call the precondition, if any.
+  Goal1 =.. [Action|[S|[S1|Params]]],
+  before(Goal1), !,
+
   % call the action
-  Goal =.. [Action|[S|[S1|Params]]],
-  catch(Goal, E, error(Goal, E, S, S1)).
+  Goal2 =.. [Action|[S1|[S2|Params]]],
+  catch(Goal2, E, error(Goal2, E, S1, S2)),
+  Goal3 =.. [Action|[S2|[S3|Params]]],
+  after(Goal3).
+action(S, S, _) :- answer('Better luck next time!').
 
 error(Goal, E, S, S) :-
   writeln(E),
@@ -256,23 +263,31 @@ declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
   foldl(Attrs1, declare_attr, S, S1),
   % Set the Description
   asserta(long_name(Name, LongName)),
-  asserta(description(Name, Desc)).
+  asserta(description(_, Name, Desc)).
 
 declare1(S, new_location(Room, Desc, Doors), S2) :-
   declare1(S, new_location(Room, Desc, Doors, []), S2) .
 declare1(S, new_location(Room, Desc, Doors, Objects), S2) :-
   % @todo only visited locations and direct doors
   asserta(location(_,Room)),
-  asserta(description(Room, Desc)),
+  asserta(description(_, Room, Desc)),
   new_xs(S, door(Room), Doors, S1),
   new_objects(S1, Room, Objects, S2).
 declare1(S, new_person(Name, Desc), S) :-
   asserta(person(_,Name)),
-  asserta(description(Name, Desc)).
+  asserta(description(_, Name, Desc)).
 declare1(S, new_inside(Place, X), S1) :-
   put_assoc(inside(X), S, Place, S1).
 declare1(S, new_on(Place, X), S1) :-
   put_assoc(on(X), S, Place, S1).
+
+% FIXME. We shouldn't modify the database when loading a game. Also,
+% we should have a proper syntax instead of using assert.
+declare1(S, assert(Rule), S) :-
+  asserta(Rule).
+
+declare1(S, Malformed, S) :- gtrace,
+  answer('ERROR: malformed rule ~w.', Malformed).
 
 wrapped(Arg, Functor, Term) :-
   Term =.. [Functor, Arg].
@@ -302,6 +317,11 @@ delete_assoc(Key, Assoc, NewAssoc) :-
   delete(List, Key-_, List2),
   list_to_assoc(List2, NewAssoc).
 
+% Shortcut for querying attributes from the state assoc data structure.
+is(Object, Attribute, State) :-
+  Goal =.. [Attribute, Object],
+  get_assoc(Goal, State, true).
+
 %-----------------------------------------------
 % BASIC GAME MECHANICS
 
@@ -312,13 +332,21 @@ noun_type(person).
 
 new_game(GameDescription-StartLocation, NewGame) :-
   list_to_assoc([here-StartLocation], S),
-  maplist(retractall, [long_name, description, person, location]),
+  maplist(retractall, [long_name, description, person, location, before, after]),
+
+  % default pre/postconditions.
+  assert(before(Action) :- (Action =.. [_|[S1|[S1|_]]])),
+  assert(after(Action)  :- (Action =.. [_|[S2|[S2|_]]])),
+
   % nouns
   declare(S, GameDescription, NewGame),
   % Now seal off the Prolog engine
   retractall(assert),
   retractall(asserta),
   retractall(assertz).
+
+new_game(_, []) :- gtrace,
+  answer('There was an error loading the game.').
 
 % properties
 inflammable(wood).
@@ -358,11 +386,11 @@ object(S, Obj) :- here(S, Obj).
 % room or in the inventory.
 openable_object(S, Obj) :-
   object(S, Obj),
-  get_assoc(can_be_opened(Obj), S, true).
+  is(Obj, can_be_opened, S).
 % An object that holds other objects
 container_object(S, Obj) :-
   object(S, Obj),
-  get_assoc(container(Obj), S, true).
+  is(Obj, container, S).
 
 % actions
 %--------------------------------------------------------------------
@@ -372,7 +400,7 @@ action(look).
 look(S, S) :-
   get_assoc(here, S, Location),
   printable(Location, L),
-  description(Location, Desc),
+  description(S, Location, Desc),
   answer('You are in the ~~location(~w).~n~w', [L, Desc]),
   look_objects(S, Location, L),
   look_doors(S, Location).
@@ -384,7 +412,7 @@ look_objects(S, Location, L) :-
   printable(Obj, ObjName),
   % if it can be opened, it must be open to continue
   (openable_object(S, Location)
-  ->  (get_assoc(open(Location), S, true)
+  ->  (is(Location, open, S)
       -> true
       ;  answer('The ~w is closed shut.', [Location]),
          fail)
@@ -401,7 +429,7 @@ look_objects(_, _, _).
 
 % helper for container objects
 look_inside_objects(S, Obj) :-
-  (  get_assoc(open(Obj), S, true)
+  (  is(Obj, open, S)
   -> printable(Obj, O),
      look_objects(S, Obj, O)
   ;  true).
@@ -416,7 +444,7 @@ look_doors(_, _).
 % look at
 action(look_at).
 look_at(S, S, X) :-
-  description(X, Desc),
+  description(S, X, Desc),
   answer('~w~n', [Desc]),
   look_objects(S, X, X). % fixme
 
@@ -430,7 +458,7 @@ look_in(S, S, X) :-
 action(open_).
 open_(S, S1, Obj) :-
   printable(Obj, ObjName),
-  (  get_assoc(can_be_opened(Obj), S, true)
+  (  is(Obj, can_be_opened, S)
   ->
      put_assoc(open(Obj), S, true, S1),
      answer('Behold, the ~w is now open.~n', [ObjName]),
@@ -444,7 +472,7 @@ open_(S, S1, Obj) :-
 action(close_).
 close_(S, S1, Obj) :-
   printable(Obj, ObjName),
-  (  get_assoc(open(Obj), S, true)
+  (  is(Obj, open, S)
   ->
      delete_assoc(open(Obj), S, S1),
      answer('You close the ~w.~n', [ObjName])
@@ -484,7 +512,8 @@ go(S, S2, Location, Path) :- !,
   ( length(Path, 1)
   -> answer('You are entering the ~w.', [L])
   ;  append(Path1, [_], Path), % skip the destination
-     atomic_list_concat(Path1, ', ', PathL),
+     maplist(printable, Path1, Path2),
+     atomic_list_concat(Path2, ', ', PathL),
      answer('Passing through ~w you move towards the ~w.', [PathL, L])
   ),
   look(S1, S2).
@@ -524,6 +553,42 @@ put_object(S, S2, DirectObj, IndirectObj) :-
   answer('You leave the ~w in the ~w.', [DirectObj, IndirectObj]).
 put_object(S, S, _, _) :-
   answer('Sorry, but you cannot do that.').
+
+% turn on.
+action(turn_on).
+turn_on(S, S1, Object) :-
+  object(S, Object), !,
+  turn_on1(S, S1, Object).
+turn_on(S, S, Object) :-
+  answer('There is no ~w here that you could turn on.', [Object]).
+
+turn_on1(S, S, Object) :-
+  is(Object, turned_on, S), !,
+  answer('The ~w is already on.', [Object]).
+
+turn_on1(S, S2, Object) :-
+  is(Object, turned_off, S), !,
+  put_assoc(turned_on(Object), S, true, S1),
+  delete_assoc(turned_off(Object), S1, S2),
+  answer('You turn on the ~w.', [Object]).
+
+% turn off.
+action(turn_off).
+turn_off(S, S1, Object) :-
+  object(S, Object), !,
+  turn_off1(S, S1, Object).
+turn_off(S, S, Object) :-
+  answer('There is no ~w around here, and it isn\'t on either.', [Object]).
+
+turn_off1(S, S, Object) :-
+  is(Object, turned_off, S), !,
+  answer('The ~w is already off.', [Object]).
+
+turn_off1(S, S2, Object) :-
+  is(Object, turned_on, S), !,
+  put_assoc(turned_off(Object), S, true, S1),
+  delete_assoc(turned_on(Object), S1, S2),
+  answer('You turn the ~w off.', [Object]).
 
 % quit
 action(quit).

@@ -8,6 +8,7 @@ proc test {name regex} {
 proc do_command {command result} {
     test "prompt" ">"
     send "$command\r"
+    test "autocompletion: $command" "[string range $command 3 1000]"
     test $command $result
 }
 
@@ -24,6 +25,16 @@ do_command "look at the bread"           "durable"
 do_command "put the gnome into the oven" "You place the gnome in"
 #set timeout -1
 do_command "close the oven"              "close the oven"
+do_command "turn on the oven"            "gas streaming"
+do_command "turn on the oven"            "already"
+do_command "turn off the oven"           "turn the oven off"
+do_command "turn off the oven"           "already"
+do_command "turn on the oven"            "gas streaming"
+do_command "open the oven"               "gnome"
+do_command "look at the oven"            "streaming"
+do_command "switch on the lighter"       "on"
+do_command "look at the lighter"         "flame"
+do_command "put the lighter into the oven" "ignites"
 
 test "prompt" ">"
 # Shutdown.
