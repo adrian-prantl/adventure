@@ -1,42 +1,31 @@
 % -*- prolog -*-
 'The test game':
 [
- new_object(bread,'a loaf of bread','The bread seems extremely durable.'),
- new_object(lighter,'a lighter','A real Zippo.', [turned_off]),
- assert(description(S, lighter, _) :- (
-	  is(lighter, turned_on, S),
-	  answer('The lighter sports a clear burning flame.'),
-	  fail)),
+ object(bread,'a loaf of bread','The bread seems extremely durable.'),
+ object(lighter,'a lighter','A real Zippo.', [turned_off]),
+ description_if(lighter, turned_on, 'The lighter sports a clear burning flame.'),
 
-
- new_object(oven,'grandmother\'s oven.',
+ object(oven,'grandmother\'s oven.',
 	    'It is made out of shiny white emaille.', [can_be_opened,container, turned_off]),
  assert(after(turn_on(S, S1, oven)) :-
 	  (answer('You hear a clicking noise and the sound of gas streaming into the oven.'),
 	  ( inside_of(S, lighter, oven)
 	    -> ignite_oven(S, S1)    
 	    ; answer('The ignition mechanism appears to be broken.'), S=S1))),
- assert(description(S, oven, _) :- (
-	  is(oven, burning, S),
-	  answer('The oven is burning hot.'),
-	  fail)),
- assert(description(S, oven, _) :- (
-	  \+ is(oven, burning, S),
-	  is(oven, turned_on, S),
-	  answer('Gas is streaming into the oven.'),
-	  fail)),
+ description_if(oven, burning, 'The oven is burning hot.'),
+ description_if(oven, [not(burning), turned_on], 'Gas is streaming into the oven.'),
  assert(after(put(S, S1, lighter, oven)) :- (
           is(lighter, turned_on, S),
 	  is(oven, turned_on, S),
 	  ignite_oven(S, S1))),
-assert(ignite_oven(S, S1) :- (
-         get_assoc(turned_on(lighter), S, true),
+ assert(ignite_oven(S, S1) :- (
+         is(lighter, turned_on, S),
 	 answer('The flame of the lighter ignites the gas.'),
 	 put_assoc(burning(oven), S, true, S1))),
 
- new_location([living,room], 'A cosy living room.',[kitchen],[lighter]),
- new_location(kitchen,'The kitchen is small.',[[living,room]],[gnome,oven]),
- new_inside(oven, bread),
- new_person(gnome, 'Even for a gnome he seems unusually hairy.'),
- new_inside(inventory, lighter)
+ location([living,room], 'A cosy living room.',[kitchen],[lighter]),
+ location(kitchen,'The kitchen is small.',[[living,room]],[gnome,oven]),
+ inside(oven, bread),
+ person(gnome, 'Even for a gnome he seems unusually hairy.'),
+ inside(inventory, lighter)
 ]-kitchen.

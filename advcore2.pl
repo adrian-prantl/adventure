@@ -226,7 +226,7 @@ answer1(Message)    :- italic, cformat(Message, []), roman.
 answer1(Message,Xs) :- italic, cformat(Message, Xs), roman.
 
 %-----------------------------------------------
-% Meta-macro system
+% Meta-macro system / Game descriptions.
 %-----------------------------------------------
 
 %% foldl(?List, ?Pred, ?Start, ?Result)
@@ -250,13 +250,13 @@ declare(S, Xs, S1) :-
   foldl(Xs, declare1, S, S1).
 %  phrase(declare1(Xs), S, S1).
 
-declare1(S, new_object(Name, LongName), S) :-
-  declare1(S, new_object(Name, LongName, 'it has nothing special about it', []), S).
+declare1(S, object(Name, LongName), S) :-
+  declare1(S, object(Name, LongName, 'it has nothing special about it', []), S).
 
-declare1(S, new_object(Name, LongName, Desc), S) :-
-  declare1(S, new_object(Name, LongName, Desc, []), S).
+declare1(S, object(Name, LongName, Desc), S) :-
+  declare1(S, object(Name, LongName, Desc, []), S).
 
-declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
+declare1(S, object(Name, LongName, Desc, Attrs), S1) :-
   % this is now a static rule:
   % asserta(( object(State, Name) :- here(State, Name)) ),
   maplist(wrapped(Name), Attrs, Attrs1),
@@ -265,24 +265,37 @@ declare1(S, new_object(Name, LongName, Desc, Attrs), S1) :-
   asserta(long_name(Name, LongName)),
   asserta(description(_, Name, Desc)).
 
-declare1(S, new_location(Room, Desc, Doors), S2) :-
-  declare1(S, new_location(Room, Desc, Doors, []), S2) .
-declare1(S, new_location(Room, Desc, Doors, Objects), S2) :-
+declare1(S, location(Room, Desc, Doors), S2) :-
+  declare1(S, location(Room, Desc, Doors, []), S2) .
+declare1(S, location(Room, Desc, Doors, Objects), S2) :-
   % @todo only visited locations and direct doors
   asserta(location(_,Room)),
   asserta(description(_, Room, Desc)),
   new_xs(S, door(Room), Doors, S1),
   new_objects(S1, Room, Objects, S2).
-declare1(S, new_person(Name, Desc), S) :-
+declare1(S, person(Name, Desc), S) :-
   asserta(person(_,Name)),
   asserta(description(_, Name, Desc)).
-declare1(S, new_inside(Place, X), S1) :-
+declare1(S, inside(Place, X), S1) :-
   put_assoc(inside(X), S, Place, S1).
-declare1(S, new_on(Place, X), S1) :-
+declare1(S, on(Place, X), S1) :-
   put_assoc(on(X), S, Place, S1).
 
-% FIXME. We shouldn't modify the database when loading a game. Also,
-% we should have a proper syntax instead of using assert.
+% A conditional description is executed before the generic description
+% and then fails, thus executing the generic description.
+declare1(S, description_if(Object, Conditions, Desc), S) :-
+  condition_expr(State, Object, Conditions, CondExpr),
+  asserta(description(State, Object, _) :-
+	    (CondExpr, answer(Desc), fail)).
+condition_expr(_, _, [], true).
+condition_expr(S, Obj, [not(C)|Conditions], (\+ is(Obj, C, S), CExprs)) :-
+  condition_expr(S, Obj, Conditions, CExprs).
+condition_expr(S, Obj, [C|Conditions], (is(Obj, C, S), CExprs)) :-
+  condition_expr(S, Obj, Conditions, CExprs).
+condition_expr(S, Obj, NoList, Expr) :-
+  condition_expr(S, Obj, [NoList], Expr).
+
+% FIXME. We should have a proper syntax instead of using assert.
 declare1(S, assert(Rule), S) :-
   asserta(Rule).
 
