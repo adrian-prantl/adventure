@@ -287,13 +287,11 @@ declare1(S, description_if(Object, Conditions, Desc), S) :-
   condition_expr(State, Object, Conditions, CondExpr),
   asserta(description(State, Object, _) :-
 	    (CondExpr, answer(Desc), fail)).
-condition_expr(_, _, [], true).
-condition_expr(S, Obj, [not(C)|Conditions], (\+ is(Obj, C, S), CExprs)) :-
-  condition_expr(S, Obj, Conditions, CExprs).
-condition_expr(S, Obj, [C|Conditions], (is(Obj, C, S), CExprs)) :-
-  condition_expr(S, Obj, Conditions, CExprs).
-condition_expr(S, Obj, NoList, Expr) :-
-  condition_expr(S, Obj, [NoList], Expr).
+
+% This is where most of the game logic is implemented.
+declare1(S, trigger(Obj, DCG), S) :-
+  expand_term(trigger(Obj) --> DCG, Expanded),
+  asserta(Expanded).
 
 % FIXME. We should have a proper syntax instead of using assert.
 declare1(S, assert(Rule), S) :-
@@ -302,11 +300,20 @@ declare1(S, assert(Rule), S) :-
 declare1(S, Malformed, S) :- gtrace,
   answer('ERROR: malformed rule ~w.', Malformed).
 
+% Build a comma separated list of conditions.
+condition_expr(_, _, [], true).
+condition_expr(S, Obj, [not(C)|Conditions], (\+ is(Obj, C, S, S), CExprs)) :-
+  condition_expr(S, Obj, Conditions, CExprs).
+condition_expr(S, Obj, [C|Conditions], (is(Obj, C, S, S), CExprs)) :-
+  condition_expr(S, Obj, Conditions, CExprs).
+condition_expr(S, Obj, NoList, Expr) :-
+  condition_expr(S, Obj, [NoList], Expr).
+
 wrapped(Arg, Functor, Term) :-
   Term =.. [Functor, Arg].
 
 declare_attr(S, Attribute, S1) :-
-  put_assoc(Attribute, S, true, S1).
+  set(Attribute, S, S1).
 
 new_object(S, Room, Object, S1) :- put_assoc(inside(Object), S, Room, S1).
 
@@ -331,9 +338,26 @@ delete_assoc(Key, Assoc, NewAssoc) :-
   list_to_assoc(List2, NewAssoc).
 
 % Shortcut for querying attributes from the state assoc data structure.
-is(Object, Attribute, State) :-
+is(Object, Attribute, State, State) :-
   Goal =.. [Attribute, Object],
   get_assoc(Goal, State, true).
+
+% Not is/4.
+is_not(Object, Attribute, State, State) :-
+  \+ is(Object, Attribute, State, State).
+
+% DCG-friendly version of put_assoc/4.
+set(Attribute, S, S1) :-
+  put_assoc(Attribute, S, true, S1).
+set(Attribute, Value, S, S1) :-
+  put_assoc(Attribute, S, Value, S1).
+
+replace(OldObj, NewObj) -->
+  inside_of(OldObj, Loc),
+  delete_assoc(inside(OldObj)),
+  set(inside(NewObj), Loc).
+
+  
 
 %-----------------------------------------------
 % BASIC GAME MECHANICS
@@ -345,13 +369,14 @@ noun_type(person).
 
 new_game(GameDescription-StartLocation, NewGame) :-
   list_to_assoc([here-StartLocation], S),
-  maplist(retractall, [long_name, description, person, location, before, after]),
+  maplist(retractall, [long_name, description, person, location, before, after, trigger]),
 
   % default pre/postconditions.
-  assert(before(Action) :- (Action =.. [_|[S1|[S1|_]]])),
-  assert(after(Action)  :- (Action =.. [_|[S2|[S2|_]]])),
+  assertz(before(Action) :- (Action =.. [_|[S1|[S1|_]]])),
+  assertz(after(Action)  :- (Action =.. [_|[S2|[S2|_]]])),
+  assertz(trigger(_, S3, S3)),
 
-  % nouns
+  % Load the game.
   declare(S, GameDescription, NewGame),
   % Now seal off the Prolog engine
   retractall(assert),
@@ -373,11 +398,20 @@ material(door, wood).
 %% carrying(+State, ?Obj)
 carrying(S, Obj) :- gen_assoc(inside(Obj), S, inventory).
 
-%% inside_of(+State, ?Obj, ?ContainerOrRoom)
-inside_of(S, Obj, ContainerOrRoom) :- gen_assoc(inside(Obj), S, ContainerOrRoom).
+%% inside_of(?Obj, ?ContainerOrRoom, +State, -State)
+inside_of(Obj, ContainerOrRoom, S, S) :-
+  gen_assoc(inside(Obj), S, ContainerOrRoom).
 
-%% inside_of(+State, ?Obj, ?Object)
+%% on(+State, ?Obj, ?Object)
 on(S, Obj, Object) :- gen_assoc(on(Obj), S, Object).
+
+%% next_to(?Obj, ?ContainerOrRoom, +State, -State1)
+% Two objects are next to each other if they are in the same container.
+next_to(ObjA, ObjB, S, S) :-
+  gen_assoc(inside(ObjA), S, ContainerOrRoom),
+  ContainerOrRoom \= inventory,
+  gen_assoc(inside(ObjB), S, ContainerOrRoom).
+
 
 %% here(+State, ?Obj)
 % An object is here if it is in the inventory, the current room or
@@ -399,11 +433,11 @@ object(S, Obj) :- here(S, Obj).
 % room or in the inventory.
 openable_object(S, Obj) :-
   object(S, Obj),
-  is(Obj, can_be_opened, S).
+  is(Obj, can_be_opened, S, S).
 % An object that holds other objects
 container_object(S, Obj) :-
   object(S, Obj),
-  is(Obj, container, S).
+  is(Obj, container, S, S).
 
 % actions
 %--------------------------------------------------------------------
@@ -421,11 +455,11 @@ look(S, S) :-
 % List all objects via backtracking
 look_objects(S, Location, L) :-
   % for each Obj at Location
-  inside_of(S, Obj, Location),
+  inside_of(Obj, Location, S, S),
   printable(Obj, ObjName),
   % if it can be opened, it must be open to continue
   (openable_object(S, Location)
-  ->  (is(Location, open, S)
+  ->  (is(Location, open, S, S)
       -> true
       ;  answer('The ~w is closed shut.', [Location]),
          fail)
@@ -442,7 +476,7 @@ look_objects(_, _, _).
 
 % helper for container objects
 look_inside_objects(S, Obj) :-
-  (  is(Obj, open, S)
+  (  is(Obj, open, S, S)
   -> printable(Obj, O),
      look_objects(S, Obj, O)
   ;  true).
@@ -471,9 +505,9 @@ look_in(S, S, X) :-
 action(open_).
 open_(S, S1, Obj) :-
   printable(Obj, ObjName),
-  (  is(Obj, can_be_opened, S)
+  (  is(Obj, can_be_opened, S, S)
   ->
-     put_assoc(open(Obj), S, true, S1),
+     set(open(Obj), S, S1),
      answer('Behold, the ~w is now open.~n', [ObjName]),
      look_objects(S1, Obj, ObjName)
   ;
@@ -485,7 +519,7 @@ open_(S, S1, Obj) :-
 action(close_).
 close_(S, S1, Obj) :-
   printable(Obj, ObjName),
-  (  is(Obj, open, S)
+  (  is(Obj, open, S, S)
   ->
      delete_assoc(open(Obj), S, S1),
      answer('You close the ~w.~n', [ObjName])
@@ -552,18 +586,20 @@ put(S, S1, DirectObj, IndirectObj) :-
 put(S, S, DirectObj, _) :-
   answer('You do not carry a ~w.', [DirectObj]).
 
-put_object(S, S2, DirectObj, IndirectObj) :-
+put_object(S, S3, DirectObj, IndirectObj) :-
   here(S, IndirectObj),
   container_object(S, IndirectObj), !,
   delete_assoc(inside(DirectObj), S, S1),
   put_assoc(inside(DirectObj), S1, IndirectObj, S2),
-  answer('You place the ~w inside the ~w.', [DirectObj, IndirectObj]).
-put_object(S, S2, DirectObj, IndirectObj) :-
+  answer('You place the ~w inside the ~w.', [DirectObj, IndirectObj]),
+  trigger(DirectObj, S2, S3).
+put_object(S, S3, DirectObj, IndirectObj) :-
   here(S, IndirectObj),
   location(S, IndirectObj), !,
   delete_assoc(inside(DirectObj), S, S1),
   put_assoc(on(DirectObj), S1, IndirectObj, S2),
-  answer('You leave the ~w in the ~w.', [DirectObj, IndirectObj]).
+  answer('You leave the ~w in the ~w.', [DirectObj, IndirectObj]),
+  trigger(DirectObj, S2, S3).
 put_object(S, S, _, _) :-
   answer('Sorry, but you cannot do that.').
 
@@ -576,14 +612,15 @@ turn_on(S, S, Object) :-
   answer('There is no ~w here that you could turn on.', [Object]).
 
 turn_on1(S, S, Object) :-
-  is(Object, turned_on, S), !,
+  is(Object, turned_on, S, S), !,
   answer('The ~w is already on.', [Object]).
 
-turn_on1(S, S2, Object) :-
-  is(Object, turned_off, S), !,
-  put_assoc(turned_on(Object), S, true, S1),
+turn_on1(S, S3, Object) :-
+  is(Object, turned_off, S, S), !,
+  set(turned_on(Object), S, S1),
   delete_assoc(turned_off(Object), S1, S2),
-  answer('You turn on the ~w.', [Object]).
+  answer('You turn on the ~w.', [Object]),
+  trigger(Object, S2, S3).
 
 % turn off.
 action(turn_off).
@@ -594,13 +631,14 @@ turn_off(S, S, Object) :-
   answer('There is no ~w around here, and it isn\'t on either.', [Object]).
 
 turn_off1(S, S, Object) :-
-  is(Object, turned_off, S), !,
+  is(Object, turned_off, S, S), !,
   answer('The ~w is already off.', [Object]).
 
-turn_off1(S, S2, Object) :-
-  is(Object, turned_on, S), !,
-  put_assoc(turned_off(Object), S, true, S1),
+turn_off1(S, S3, Object) :-
+  is(Object, turned_on, S, S), !,
+  set(turned_off(Object), S, S1),
   delete_assoc(turned_on(Object), S1, S2),
+  trigger(Object, S2, S3),
   answer('You turn the ~w off.', [Object]).
 
 % quit
@@ -650,8 +688,10 @@ sentence([Verb, Noun1, Noun2],S) -->
   nounphrase(S^DirectTy, Noun1),
   preposition(IndirectTy, _),
   nounphrase(S^IndirectTy, Noun2).
-sentence([Verb, Noun],S) --> trans_verb(Verb, Type), preposition(Type,_), nounphrase(S^Type, Noun).
-sentence([Verb, Noun],S) --> trans_verb(Verb, Type), nounphrase(S^Type, Noun).
+sentence([Verb, Noun],S) -->
+  trans_verb(Verb, Type), preposition(Type,_), nounphrase(S^Type, Noun).
+sentence([Verb, Noun],S) -->
+  trans_verb(Verb, Type), nounphrase(S^Type, Noun).
 
 det --> [the].
 %det --> [a].

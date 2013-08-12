@@ -13,7 +13,7 @@ proc do_command {command result} {
 }
 
 # Open the debug client.
-set timeout 5
+set timeout 30
 spawn swipl -f debug.pl
 test "init" "From here you can go to the.*living room"
 do_command "go to the living room"       "cosy"
@@ -35,6 +35,8 @@ do_command "look at the oven"            "streaming"
 do_command "switch on the lighter"       "on"
 do_command "look at the lighter"         "flame"
 do_command "put the lighter into the oven" "ignites"
+do_command "look"                        "gold"
+do_command "look at the gold"            "gold was inside"
 
 test "prompt" ">"
 # Shutdown.

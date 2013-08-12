@@ -3,29 +3,42 @@
 [
  object(bread,'a loaf of bread','The bread seems extremely durable.'),
  object(lighter,'a lighter','A real Zippo.', [turned_off]),
+ object(gas,'','You smell gas.', [flammable]),
  description_if(lighter, turned_on, 'The lighter sports a clear burning flame.'),
-
+ trigger(lighter, ( % FIXME: this should be a for_each
+	   next_to(lighter, Obj),
+	   is(lighter, turned_on),
+	   is(Obj, flammable),
+	   set(on_fire(Obj)),
+	   {answer('The flame of the lighter ignites the ~w.', [Obj])},
+	   trigger(Obj))),
  object(oven,'grandmother\'s oven.',
-	    'It is made out of shiny white emaille.', [can_be_opened,container, turned_off]),
+	'It is made out of shiny white emaille.', [can_be_opened,container, turned_off]),
+ 
  assert(after(turn_on(S, S1, oven)) :-
 	  (answer('You hear a clicking noise and the sound of gas streaming into the oven.'),
-	  ( inside_of(S, lighter, oven)
-	    -> ignite_oven(S, S1)    
-	    ; answer('The ignition mechanism appears to be broken.'), S=S1))),
+	   put_assoc(inside(gas), S, oven, S1),
+	   ( inside_of(lighter, oven, S1, S1)
+	   ; answer('The ignition mechanism appears to be broken.')))),
  description_if(oven, burning, 'The oven is burning hot.'),
  description_if(oven, [not(burning), turned_on], 'Gas is streaming into the oven.'),
- assert(after(put(S, S1, lighter, oven)) :- (
-          is(lighter, turned_on, S),
-	  is(oven, turned_on, S),
-	  ignite_oven(S, S1))),
- assert(ignite_oven(S, S1) :- (
-         is(lighter, turned_on, S),
-	 answer('The flame of the lighter ignites the gas.'),
-	 put_assoc(burning(oven), S, true, S1))),
+ trigger(gas, (
+         is(gas, on_fire),
+	 next_to(gas, Obj),
+	 is(Obj, flammable),
+	 is_not(Obj, on_fire),
+	 set(on_fire(Obj)),
+	 trigger(Obj))),
 
  location([living,room], 'A cosy living room.',[kitchen],[lighter]),
  location(kitchen,'The kitchen is small.',[[living,room]],[gnome,oven]),
  inside(oven, bread),
- person(gnome, 'Even for a gnome he seems unusually hairy.'),
+ object(gnome, 'A garden gnome made out of a waxy material.',
+	'Even for a gnome he seems unusually hairy.', [flammable]),
+ trigger(gnome, (is(gnome, on_fire),
+		 {answer('The gnome begins to melt away.')},
+	         replace(gnome, gold))),
+ object(gold, 'a lump of hot gold', 'The gold was inside the gnome figurine.'),
+ person(man, 'An old and quiet man.'),
  inside(inventory, lighter)
 ]-kitchen.
