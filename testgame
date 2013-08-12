@@ -40,5 +40,6 @@
 	         replace(gnome, gold))),
  object(gold, 'a lump of hot gold', 'The gold was inside the gnome figurine.'),
  person(man, 'An old and quiet man.'),
+ inside([living,room], man),
  inside(inventory, lighter)
 ]-kitchen.
