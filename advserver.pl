@@ -93,7 +93,6 @@ welcome(_) :-
   atom_concat(Base, 'css/adventure.css', CSS),
   format(atom(Init), 'action="~winit" method="post"', [Base]),
   reply_html_page([title(Title),
-		   %\html_requires(css('adventure.css'))
 		   \html_requires(CSS)
 		  ],
 		  [ h1(Title),
@@ -152,6 +151,7 @@ init(Request) :-
   http_session_retractall(state(_)),
 
   base_path(Base),
+  atom_concat(Base, 'css/adventure.css', CSS),
   
   % Load the game definition
   http_parameters(Request, [ game(FileName, [default('testgame')]) ]), !,
@@ -163,7 +163,6 @@ init(Request) :-
      ->  http_session_assert(title(Title)),
 	 http_session_assert(history('Welcome!')),
 	 http_session_assert(state(State)),
-	 atom_concat(Base, 'css/adventure.css', CSS),
 	 reply_html_page([title(Title),
 			  \html_requires(CSS)
 			 ],
