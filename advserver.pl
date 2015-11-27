@@ -254,7 +254,7 @@ main_loop(Request) :-
   format(atom(Form), 'action="~w" method="link"', [Base]),
   Restart = form(Form, [input('type="submit" value="restart"')]),
   format(atom(Autocompleter), 
-	 '  new Ajax.Autocompleter("lineinput",
+	 '  new Ajax.Autocompleter("autocomplete",
 	                           "autocomplete_choices",
 		                   "~wautocomplete",
 		                   { method: \'get\' });
@@ -276,7 +276,7 @@ main_loop(Request) :-
 		  ])),
 	   % additional space for the autocompletion box
 	   br(''),br(''),br(''),br(''),
-	   br(''),br(''),br(''),br(''),br('id=bottom'),
+	   br(''),br(''),br(''),br(''),br('id=bottom')),
 	   % Autocompletion, focus on input field, scroll to bottom
 	   script('type=text/javascript', Autocompleter)
 	  ]
@@ -333,7 +333,7 @@ autocomplete(Request) :-
        ),
   % Return the autocompletion as an unsorted list
   (  Completions = []
-  -> reply_html_page([],ul('I probably won\'t get that. So sorry!'))
+  -> reply_html_page([],ul('I probably won\'t get that. Sorry!'))
   ;  reply_html_page([],ul(Completions))
   ).
 
