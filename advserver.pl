@@ -73,6 +73,7 @@ roman.% :- write(roman).
 :- http_handler(js_script('prototype.js'), http_reply_file('contrib/prototype.js', []), []).
 :- http_handler(js_script('scriptaculous.js'), http_reply_file('contrib/scriptaculous.js', []), []).
 :- http_handler(js_script('slider.js'), http_reply_file('contrib/slider.js', []), []).
+:- http_handler(js_script('sound.js'), http_reply_file('contrib/sound.js', []), []).
 
 http:location(css, root('css'), []).
 http:location(js_script, root('js_script'), []).

@@ -1,8 +1,8 @@
-// script.aculo.us controls.js v1.8.3, Thu Oct 08 11:23:33 +0200 2009
+// script.aculo.us controls.js v1.9.0, Thu Dec 23 16:54:48 -0500 2010
 
-// Copyright (c) 2005-2009 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-//           (c) 2005-2009 Ivan Krstic (http://blogs.law.harvard.edu/ivan)
-//           (c) 2005-2009 Jon Tirsen (http://www.tirsen.com)
+// Copyright (c) 2005-2010 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
+//           (c) 2005-2010 Ivan Krstic (http://blogs.law.harvard.edu/ivan)
+//           (c) 2005-2010 Jon Tirsen (http://www.tirsen.com)
 // Contributors:
 //  Richard Livsey
 //  Rahul Bhargava
@@ -231,16 +231,8 @@ Autocompleter.Base = Class.create({
   },
 
   selectEntry: function() {
-    //this.active = false;
-    //this.updateElement(this.getCurrentEntry());
-    this.active = false; 
-    if(this.index != -1){ 
-      this.updateElement(this.getCurrentEntry()); 
-    }else{ 
-      if (this.options.afterUpdateElement) 
-        this.options.afterUpdateElement(this.element, 
-                                        new Element('li', {id: '', name: ''})); 
-    }  
+    this.active = false;
+    this.updateElement(this.getCurrentEntry());
   },
 
   updateElement: function(selectedElement) {
@@ -291,7 +283,7 @@ Autocompleter.Base = Class.create({
       }
 
       this.stopIndicator();
-      this.index = -1; // http://groups.google.com/group/prototype-scriptaculous/browse_thread/thread/2e059019b77413b8/69d0408b96bc4df0?hl=en&lnk=gst&q=autocomplete+enter#69d0408b96bc4df0
+      this.index = 0;
 
       if(this.entryCount==1 && this.options.autoSelect) {
         this.selectEntry();
