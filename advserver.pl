@@ -276,7 +276,7 @@ main_loop(Request) :-
 		  ])),
 	   % additional space for the autocompletion box
 	   br(''),br(''),br(''),br(''),
-	   br(''),br(''),br(''),br(''),br('id=bottom')),
+	   br(''),br(''),br(''),br(''),br('id=bottom'),
 	   % Autocompletion, focus on input field, scroll to bottom
 	   script('type=text/javascript', Autocompleter)
 	  ]
