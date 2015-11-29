@@ -254,7 +254,7 @@ main_loop(Request) :-
   format(atom(Form), 'action="~w" method="link"', [Base]),
   Restart = form(Form, [input('type="submit" value="restart"')]),
   format(atom(Autocompleter), 
-	 '  new Ajax.Autocompleter("autocomplete",
+	 '  new Ajax.Autocompleter("lineinput",
 	                           "autocomplete_choices",
 		                   "~wautocomplete",
 		                   { method: \'get\' });
@@ -331,11 +331,16 @@ autocomplete(Request) :-
 	time_limit_exceeded,
 	Completions = li('<timeout>')
        ),
-  % Return the autocompletion as an unsorted list
+  % Return the autocompletion as an unsorted list html fragment.
   (  Completions = []
-  -> reply_html_page([],ul('I probably won\'t get that. Sorry!'))
-  ;  reply_html_page([],ul(Completions))
-  ).
+  -> Body = ul('I probably won\'t get that. Sorry!')
+  ;  Body = ul(Completions)),
+  phrase(page(default, [], Body), HTML),
+  append([Doctype, Html, Bracket, _Meta], Rest, HTML),
+  append([Doctype, Html, Bracket], Rest, HTML1),
+  html_current_option(content_type(Type)),
+  format('Content-type: ~w~n~n', [Type]),
+  print_html(HTML1).
 
 autocomplete1(State, Line, Completion) :-
   line_words_cs(Line, Words, Cs),
